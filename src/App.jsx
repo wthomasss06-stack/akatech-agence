@@ -15,7 +15,7 @@ import {
   MessageSquare, Target, Code, Rocket,
   Check, Menu, X, Play,
   Timer, ShieldCheck as ShieldCheckIcon,
-  User, BadgeCheck,
+  User, BadgeCheck, AlertTriangle,
 } from 'lucide-react'
 
 // ── PERFORMANCE : LAZY IMAGE ──────────────────────────────────
@@ -734,7 +734,101 @@ const GLOBAL_CSS = `
     background:rgba(34,200,100,.35);
     margin:14px auto 18px;
   }
+
+  /* ── URGENCY BANNER ── */
+  @keyframes urgency-slide { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes urgency-dot   { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.6);opacity:.6} }
+  @keyframes urgency-scroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  .urgency-banner {
+    position:fixed; top:0; left:0; right:0; z-index:1001;
+    height:34px;
+    background:linear-gradient(90deg, #0a1a0e 0%, #0d2414 40%, #091608 100%);
+    border-bottom:1px solid rgba(34,200,100,.2);
+    display:flex; align-items:center; overflow:hidden;
+    animation:urgency-slide .5s .8s cubic-bezier(.22,1,.36,1) both;
+    box-shadow:0 2px 20px rgba(0,0,0,.4);
+  }
+  body.light-mode .urgency-banner {
+    background:linear-gradient(90deg,#f0fdf4,#dcfce7,#f0fdf4);
+    border-bottom-color:rgba(22,163,74,.2);
+  }
+  .urgency-banner-track {
+    display:flex; align-items:center; gap:0;
+    animation:urgency-scroll 28s linear infinite;
+    white-space:nowrap; width:max-content;
+  }
+  .urgency-banner-track:hover { animation-play-state:paused; }
+  .urgency-item {
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:0 2.5rem;
+    font-family:'JetBrains Mono',monospace;
+    font-size:.62rem; letter-spacing:.08em;
+    color:rgba(34,200,100,.7);
+  }
+  body.light-mode .urgency-item { color:rgba(22,163,74,.75); }
+  .urgency-dot-live {
+    width:6px; height:6px; border-radius:50%;
+    background:#22c864; flex-shrink:0;
+    animation:urgency-dot 1.4s ease-in-out infinite;
+  }
+  .urgency-sep { color:rgba(34,200,100,.2); padding:0 .5rem; }
+  .urgency-strong { color:#66ffaa; font-weight:700; }
+  body.light-mode .urgency-strong { color:#15803d; }
+  .urgency-close {
+    position:absolute; right:.6rem; top:50%; transform:translateY(-50%);
+    width:22px; height:22px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(34,200,100,.08); color:rgba(34,200,100,.5);
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s; flex-shrink:0; z-index:2;
+  }
+  .urgency-close:hover { background:rgba(34,200,100,.18); color:#66ffaa; }
 `
+
+// ── BANNER CONTEXT ───────────────────────────────────────────
+const BannerCtx = createContext({ bannerVisible: true })
+
+// ── URGENCY BANNER ───────────────────────────────────────────
+const BANNER_H = 34
+
+function UrgencyBanner() {
+  const { bannerVisible, setBannerVisible } = useContext(BannerCtx)
+  const T = useTheme()
+
+  const spotsLeft = 2
+  const month = new Date().toLocaleDateString('fr-FR', { month: 'long' })
+
+  if (!bannerVisible) return null
+
+  const items = [
+    { icon: <Rocket size={11}/>, text: <><span className="urgency-strong">{spotsLeft} projets disponibles</span> en {month}</> },
+    { icon: <Clock size={11}/>,  text: <>Devis gratuit · Réponse sous <span className="urgency-strong">24h</span></> },
+    { icon: <Zap size={11}/>,    text: <><span className="urgency-strong">Offre spéciale</span> : formation incluse sur tout projet ce mois</> },
+    { icon: <MessageCircle size={11}/>, text: <>WhatsApp : <span className="urgency-strong">+225 01 42 50 77 50</span></> },
+  ]
+
+  return (
+    <div
+      className="urgency-banner"
+      style={{ position:'fixed', top:0, left:0, right:0, zIndex:1002, height:BANNER_H, paddingRight:'2rem' }}
+    >
+      <div className="urgency-banner-track">
+        {[...items, ...items].map((item, i) => (
+          <span key={i} className="urgency-item">
+            <span style={{ color:'rgba(34,200,100,.6)', display:'flex', alignItems:'center', flexShrink:0 }}>
+              {item.icon}
+            </span>
+            {item.text}
+            <span className="urgency-sep">·</span>
+          </span>
+        ))}
+      </div>
+      <button className="urgency-close" onClick={() => setBannerVisible(false)} aria-label="Fermer">
+        <X size={10}/>
+      </button>
+    </div>
+  )
+}
 
 // ── MICRO CURSOR + RIPPLE ─────────────────────────────────────
 function MicroCursor() {
@@ -1002,6 +1096,8 @@ function Navbar() {
   const [active,setActive]=useState('')
   const [open,setOpen]=useState(false)
   const T = useTheme()
+  const { bannerVisible } = useContext(BannerCtx)
+  const navTop = bannerVisible ? BANNER_H : 0
   useEffect(()=>{
     const fn=()=>{ const y=window.scrollY; setScrolled(y>60); const ss=document.querySelectorAll('section[id],div[id]'); let c=''; ss.forEach(s=>{if(y>=s.offsetTop-130)c=s.id}); setActive(c) }
     window.addEventListener('scroll',fn,{passive:true}); fn(); return()=>window.removeEventListener('scroll',fn)
@@ -1028,15 +1124,17 @@ function Navbar() {
     <>
       <motion.nav
         className="fixed left-0 right-0 z-[900]"
+        animate={{ top: navTop }}
+        transition={{ duration:.3, ease:[.22,1,.36,1] }}
         style={{
-          top:0, height:64,
+          height:64,
           display:'flex', alignItems:'center',
           padding: scrolled ? '0 1.2rem 0 0.5rem' : '0 1.5rem 0 0.5rem',
           background: navBg,
           backdropFilter: scrolled ? 'blur(20px)' : 'none',
           WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
           borderBottom: scrolled ? `1px solid ${navBorder}` : 'none',
-          transition:'all .4s cubic-bezier(.22,1,.36,1)',
+          transition:'background .4s, border .4s, padding .4s',
         }}
       >
         {/* Logo */}
@@ -1238,7 +1336,8 @@ function Hero() {
       <div style={{position:'relative',zIndex:10,maxWidth:760,padding:'0 1.5rem'}}>
         <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.1}} style={{display:'inline-flex',alignItems:'center',gap:'.5rem',padding:'.35rem 1rem',background:'rgba(34,200,100,.07)',border:'1px solid rgba(34,200,100,.2)',borderRadius:100,fontSize:'.72rem',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.1em',color:'#66ffaa',textTransform:'uppercase',marginBottom:'2rem'}}>
           <span style={{width:6,height:6,borderRadius:'50%',background:'#22c864',animation:'pulse-ring 1.8s ease-out infinite'}}/>
-          🔥 +10 projets livrés · Abidjan, Côte d'Ivoire
+          <Zap size={10} style={{color:'#66ffaa'}}/>
+          +10 projets livrés · Abidjan, Côte d'Ivoire
         </motion.div>
 
         <motion.h1 initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{delay:.2}} style={{fontSize:'clamp(2.8rem,6vw,5rem)',fontWeight:800,letterSpacing:'-.04em',lineHeight:1.05,color:'#fff',marginBottom:'1.5rem',fontFamily:"'Syne',sans-serif"}}>
@@ -1263,12 +1362,13 @@ function Hero() {
                 fontFamily:"'JetBrains Mono',monospace",
                 letterSpacing:'.03em',
               }}>
-                <span style={{fontSize:'.7rem'}}>✗</span>{txt}
+                <span style={{display:'flex',alignItems:'center',flexShrink:0}}><X size={10} style={{color:'rgba(255,120,120,.7)'}}/></span>{txt}
               </span>
             ))}
           </div>
           {/* Séparateur flèche */}
-          <div style={{textAlign:'center',color:'rgba(34,200,100,.4)',fontSize:'.85rem',lineHeight:1}}>↓</div>
+          <div style={{textAlign:'center',color:'rgba(34,200,100,.4)',lineHeight:1,display:'flex',justifyContent:'center'}}>
+            <ArrowRight size={14} style={{transform:'rotate(90deg)',color:'rgba(34,200,100,.4)'}}/></div>
           {/* Ligne solution */}
           <p style={{
             fontSize:'1rem',
@@ -1294,10 +1394,34 @@ function Hero() {
           className="sku-card hero-trust-bar"
           style={{display:'inline-flex',gap:'2.5rem',padding:'1.2rem 2.5rem',flexWrap:'wrap',justifyContent:'center',alignItems:'center'}}
         >
-          {[{val:'10+',label:'Projets livrés'},{val:'< 24h',label:'Réponse garantie'},{val:'100%',label:'Sur mesure'},{val:'5★',label:'Clients satisfaits'}].map(({val,label},i)=>(
-            <div key={i} style={{textAlign:'center',minWidth:0}}>
-              <div className="trust-val" style={{fontFamily:"'Orbitron',sans-serif",fontSize:'1.5rem',fontWeight:900,color:'#22c864',lineHeight:1}}>{val}</div>
-              <div className="trust-lbl" style={{fontSize:'.65rem',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',fontFamily:"'JetBrains Mono',monospace",whiteSpace:'nowrap'}}>{label}</div>
+          {[{val:'10+',label:'Projets livrés',urgent:false},{val:'< 24h',label:'Réponse garantie',urgent:false},{val:'100%',label:'Sur mesure',urgent:false},{val:'2',label:'Places ce mois',urgent:true}].map(({val,label,urgent},i)=>(
+            <div key={i} style={{textAlign:'center',minWidth:0,position:'relative'}}>
+              {urgent && (
+                <div style={{
+                  position:'absolute',top:'-6px',left:'50%',transform:'translateX(-50%)',
+                  width:'100%',height:'100%',borderRadius:8,
+                  background:'rgba(251,146,60,.06)',
+                  border:'1px solid rgba(251,146,60,.2)',
+                  padding:'4px 10px',
+                  pointerEvents:'none',
+                }}/>
+              )}
+              <div className="trust-val" style={{
+                fontFamily:"'Orbitron',sans-serif",fontSize:'1.5rem',fontWeight:900,lineHeight:1,
+                color: urgent ? '#fb923c' : '#22c864',
+                animation: urgent ? 'urgency-dot 1.8s ease-in-out infinite' : 'none',
+                position:'relative',zIndex:1,
+              }}>{val}</div>
+              <div className="trust-lbl" style={{
+                fontSize:'.65rem',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',
+                fontFamily:"'JetBrains Mono',monospace",whiteSpace:'nowrap',
+                color: urgent ? 'rgba(251,146,60,.8)' : undefined,
+                position:'relative',zIndex:1,
+                display:'flex',alignItems:'center',justifyContent:'center',gap:'.2rem',
+              }}>
+                {urgent && <AlertTriangle size={9} style={{color:'rgba(251,146,60,.9)',flexShrink:0}}/>}
+                {label}
+              </div>
             </div>
           ))}
         </motion.div>
@@ -1489,6 +1613,86 @@ function About() {
         </div>
       </div>
     </section>
+  )
+}
+
+// ── SECTION CTA STRIP ────────────────────────────────────────
+// Bande CTA légère à injecter entre les sections
+function SectionCTA({ message, cta, href='https://wa.me/2250142507750', variant='subtle' }) {
+  const T = useTheme()
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-40px' })
+
+  const isStrong = variant === 'strong'
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity:0, y:16 }}
+      animate={inView ? { opacity:1, y:0 } : {}}
+      transition={{ duration:.5, ease:[.22,1,.36,1] }}
+      style={{
+        padding: isStrong ? '2.8rem 5%' : '1.8rem 5%',
+        background: isStrong
+          ? (T.light ? 'linear-gradient(135deg,#f0fdf4,#dcfce7)' : 'linear-gradient(135deg,#0a1a0e,#0d2414)')
+          : 'transparent',
+        borderTop: `1px solid ${T.border}`,
+        borderBottom: `1px solid ${T.border}`,
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'space-between',
+        flexWrap:'wrap',
+        gap:'1.2rem',
+        position:'relative',
+        overflow:'hidden',
+      }}
+    >
+      {isStrong && (
+        <div style={{
+          position:'absolute',right:'-5%',top:'50%',transform:'translateY(-50%)',
+          width:280,height:280,borderRadius:'50%',
+          background:'radial-gradient(circle,rgba(34,200,100,.1),transparent 65%)',
+          pointerEvents:'none',
+        }}/>
+      )}
+      <div style={{display:'flex',alignItems:'center',gap:'.8rem',position:'relative',zIndex:1}}>
+        <div style={{
+          width:36,height:36,borderRadius:'50%',flexShrink:0,
+          background:'rgba(34,200,100,.1)',
+          border:`1px solid ${T.border2}`,
+          display:'flex',alignItems:'center',justifyContent:'center',
+        }}>
+          <MessageCircle size={16} style={{color:T.green}}/>
+        </div>
+        <p style={{
+          fontFamily:"'Syne',sans-serif",
+          fontSize: isStrong ? '.98rem' : '.88rem',
+          fontWeight: isStrong ? 700 : 500,
+          color: T.textSub,
+          margin:0,
+          lineHeight:1.5,
+        }}>
+          {message}
+        </p>
+      </div>
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className={isStrong ? 'btn-raised' : 'btn-ghost'}
+        style={{
+          padding:'.6rem 1.4rem',
+          fontSize:'.82rem',
+          flexShrink:0,
+          whiteSpace:'nowrap',
+          position:'relative',zIndex:1,
+          display:'inline-flex',alignItems:'center',gap:'.4rem',
+        }}
+      >
+        {isStrong ? <Rocket size={14}/> : <MessageCircle size={14}/>}
+        {cta}
+      </a>
+    </motion.div>
   )
 }
 
@@ -1833,13 +2037,20 @@ function Process() {
 
 // ── PROJECTS CAROUSEL ────────────────────────────────────────
 const PROJS=[
-  {id:1,title:'ShopCI',sub:'Marketplace E-commerce',cat:'live',desc:'Marketplace multi-vendeurs ivoirien. Panier temps réel, paiement sécurisé.',tech:['React','Django','Bootstrap 5'],url:'https://shop-ci.vercel.app/',img:'/images/projects/shopci.jpg',premium:true},
-  {id:2,title:'TechFlow',sub:'Site Vitrine Pro',cat:'live',desc:'Site vitrine moderne pour activité tech. Interface propre et responsive.',tech:['HTML','Tailwind CSS','JS'],url:'https://techflow-ten.vercel.app/',img:'/images/projects/techflow.jpg',premium:true},
-  {id:3,title:'TerraSafe',sub:'Marketplace Foncière',cat:'live',desc:"Plateforme anti-arnaques foncières. Auth sécurisée et backend Python.",tech:['Python/Flask','MySQL','Bootstrap 5'],url:'https://wthomassss06.pythonanywhere.com',img:'/images/projects/terrasafe.jpg',premium:true},
-  {id:4,title:'Tati',sub:'Portfolio & Vitrine',cat:'live',desc:"Portfolio double-fonction, thème sombre/clair, animations Framer Motion.",tech:['React','Tailwind','Framer Motion'],url:'https://tatii.vercel.app/',img:'/images/projects/tati.jpg',premium:true},
-  {id:5,title:'MK',sub:'Portfolio Graphiste',cat:'live',desc:"Portfolio sur-mesure pour graphiste. Galerie immersive et design élégant.",tech:['React','Tailwind','Framer Motion'],url:'https://mory01ff.vercel.app/',img:'/images/projects/mk.jpg',premium:true},
-  {id:6,title:'Chap-chapMAP',sub:'Navigation GPS',cat:'demo',desc:"Cartographie GPS temps réel et calcul d'itinéraires optimisés.",tech:['Leaflet.js','OSRM','Geolocation'],url:'',img:'/images/projects/chapchap.jpg'},
-  {id:7,title:'ElvisMarket',sub:'Interface E-commerce',cat:'demo',desc:"Panier dynamique, filtres avancés et UX soignée en JS vanilla.",tech:['HTML','JS vanilla','Tailwind'],url:'',img:'/images/projects/elvismarket.jpg'},
+  {id:1,title:'ShopCI',sub:'Marketplace E-commerce',cat:'live',desc:'Marketplace multi-vendeurs ivoirien. Panier temps réel, paiement sécurisé.',tech:['React','Django','Bootstrap 5'],url:'https://shop-ci.vercel.app/',img:'/images/projects/shopci.jpg',premium:true,
+    stats:[{icon:ShoppingCart,val:'Multi-vendeurs',label:'fonctionnel'},{icon:Zap,val:'Livré en',label:'3 semaines'},{icon:Lock,val:'Paiement',label:'sécurisé'}]},
+  {id:2,title:'TechFlow',sub:'Site Vitrine Pro',cat:'live',desc:'Site vitrine moderne pour activité tech. Interface propre et responsive.',tech:['HTML','Tailwind CSS','JS'],url:'https://techflow-ten.vercel.app/',img:'/images/projects/techflow.jpg',premium:true,
+    stats:[{icon:Monitor,val:'100%',label:'Responsive'},{icon:Zap,val:'Livré en',label:'7 jours'},{icon:Search,val:'SEO',label:'optimisé'}]},
+  {id:3,title:'TerraSafe',sub:'Marketplace Foncière',cat:'live',desc:"Plateforme anti-arnaques foncières. Auth sécurisée et backend Python.",tech:['Python/Flask','MySQL','Bootstrap 5'],url:'https://wthomassss06.pythonanywhere.com',img:'/images/projects/terrasafe.jpg',premium:true,
+    stats:[{icon:ShieldCheck,val:'Auth',label:'sécurisée'},{icon:Server,val:'BDD',label:'MySQL'},{icon:Zap,val:'Livré en',label:'4 semaines'}]},
+  {id:4,title:'Tati',sub:'Portfolio & Vitrine',cat:'live',desc:"Portfolio double-fonction, thème sombre/clair, animations Framer Motion.",tech:['React','Tailwind','Framer Motion'],url:'https://tatii.vercel.app/',img:'/images/projects/tati.jpg',premium:true,
+    stats:[{icon:SlidersHorizontal,val:'Dark/Light',label:'mode'},{icon:Zap,label:'Animations',val:'fluides'},{icon:Clock,val:'Livré en',label:'10 jours'}]},
+  {id:5,title:'MK',sub:'Portfolio Graphiste',cat:'live',desc:"Portfolio sur-mesure pour graphiste. Galerie immersive et design élégant.",tech:['React','Tailwind','Framer Motion'],url:'https://mory01ff.vercel.app/',img:'/images/projects/mk.jpg',premium:true,
+    stats:[{icon:Palette,val:'Design',label:'sur mesure'},{icon:Globe,val:'Galerie',label:'immersive'},{icon:Zap,val:'Livré en',label:'7 jours'}]},
+  {id:6,title:'Chap-chapMAP',sub:'Navigation GPS',cat:'demo',desc:"Cartographie GPS temps réel et calcul d'itinéraires optimisés.",tech:['Leaflet.js','OSRM','Geolocation'],url:'',img:'/images/projects/chapchap.jpg',
+    stats:[{icon:MapPin,val:'GPS',label:'temps réel'},{icon:Target,val:'Itinéraires',label:'optimisés'}]},
+  {id:7,title:'ElvisMarket',sub:'Interface E-commerce',cat:'demo',desc:"Panier dynamique, filtres avancés et UX soignée en JS vanilla.",tech:['HTML','JS vanilla','Tailwind'],url:'',img:'/images/projects/elvismarket.jpg',
+    stats:[{icon:ShoppingCart,val:'Panier',label:'dynamique'},{icon:SlidersHorizontal,val:'Filtres',label:'avancés'}]},
 ]
 
 function ProjectsCarousel() {
@@ -2014,6 +2225,27 @@ function ProjectsCarousel() {
                     {isMobile && <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.56rem',color:T.greenSub,letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'.25rem'}}>{p.sub}</div>}
                     {isMobile && <div style={{fontSize:'.92rem',fontWeight:700,color:T.textMain,fontFamily:"'Syne',sans-serif",marginBottom:'.4rem'}}>{p.title}</div>}
                     <p style={{fontSize:'.76rem',color:T.textSub,lineHeight:1.6,marginBottom:'.7rem'}}>{p.desc}</p>
+                    {/* ── Preuves chiffrées ── */}
+                    {p.stats && (
+                      <div style={{display:'flex',flexWrap:'wrap',gap:'.4rem',marginBottom:'.75rem'}}>
+                        {p.stats.map((s,si)=>{
+                          const StatIcon = s.icon
+                          return (
+                            <div key={si} style={{
+                              display:'inline-flex',alignItems:'center',gap:'.3rem',
+                              padding:'.22rem .65rem',
+                              background:'rgba(34,200,100,.07)',
+                              border:'1px solid rgba(34,200,100,.18)',
+                              borderRadius:6,
+                            }}>
+                              <StatIcon size={10} style={{color:'rgba(34,200,100,.7)',flexShrink:0}}/>
+                              <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:'.6rem',fontWeight:700,color:T.green}}>{s.val}</span>
+                              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.55rem',color:T.textMuted}}>{s.label}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                     <div style={{display:'flex',flexWrap:'wrap',gap:'.25rem',marginBottom:'.8rem'}}>
                       {p.tech.map(t=>(
                         <span key={t} style={{padding:'.14rem .5rem',background:'rgba(34,200,100,.07)',border:`1px solid ${T.border}`,borderRadius:4,fontFamily:"'JetBrains Mono',monospace",fontSize:'.54rem',color:T.green}}>{t}</span>
@@ -2127,6 +2359,41 @@ function Pricing() {
             })}
           </motion.div>
         </AnimatePresence>
+
+        {/* ── Urgence tarifs ── */}
+        <motion.div
+          initial={{opacity:0,y:12}} animate={inView?{opacity:1,y:0}:{}} transition={{delay:.5}}
+          style={{
+            marginTop:'2rem',
+            padding:'1rem 1.6rem',
+            borderRadius:14,
+            background: T.light ? 'rgba(22,163,74,.05)' : 'rgba(34,200,100,.04)',
+            border:`1px solid ${T.light?'rgba(22,163,74,.2)':'rgba(34,200,100,.15)'}`,
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            flexWrap:'wrap', gap:'1rem',
+          }}
+        >
+          <div style={{display:'flex',alignItems:'center',gap:'.75rem'}}>
+            <div style={{
+              width:10,height:10,borderRadius:'50%',background:'#22c864',flexShrink:0,
+              boxShadow:'0 0 8px rgba(34,200,100,.8)',
+              animation:'urgency-dot 1.4s ease-in-out infinite',
+            }}/>
+            <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.72rem',color:T.textSub,letterSpacing:'.04em',margin:0}}>
+              <span style={{color:T.light?'#16a34a':'#66ffaa',fontWeight:700,display:'inline-flex',alignItems:'center',gap:'.3rem'}}>
+                <AlertTriangle size={12} style={{flexShrink:0}}/> 2 créneaux disponibles</span>
+              {' '}ce mois-ci — les projets sont traités dans l'ordre d'arrivée.
+            </p>
+          </div>
+          <a
+            href="https://wa.me/2250142507750?text=Bonjour+AKATech,+je+veux+réserver+mon+projet+!"
+            target="_blank" rel="noreferrer"
+            className="btn-raised"
+            style={{padding:'.55rem 1.2rem',fontSize:'.78rem',flexShrink:0,whiteSpace:'nowrap'}}
+          >
+            Réserver ma place →
+          </a>
+        </motion.div>
       </div>
     </section>
   )
@@ -2535,7 +2802,7 @@ function Footer() {
             <a href="#accueil" style={{color:T.greenSub,transition:'color .2s'}}
                onMouseEnter={e=>e.currentTarget.style.color=T.green}
                onMouseLeave={e=>e.currentTarget.style.color=T.greenSub}>AKATech</a>
-            {' '}
+            {' '}· Agence · Abidjan
           </p>
         </div>
       </div>
@@ -2625,26 +2892,46 @@ function FloatingWA() {
 
 // ── APP ───────────────────────────────────────────────────────
 export default function App() {
-  const [loaded,setLoaded]=useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [bannerVisible, setBannerVisible] = useState(true)
   return (
+    <BannerCtx.Provider value={{ bannerVisible, setBannerVisible }}>
     <ThemeProvider>
       <GlobalStyles/>
       <MicroCursor/>
       <Loader onDone={()=>setLoaded(true)}/>
       {loaded&&(
         <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:.6}}>
+          <UrgencyBanner/>
           <Navbar/>
-          <main>
+          <main style={{ paddingTop: bannerVisible ? BANNER_H : 0, transition:'padding-top .3s' }}>
             <Hero/>
             <MarqueeStrip/>
             <About/>
+            <SectionCTA
+              message="Vous avez une idée de projet ? On en parle — c'est gratuit et sans engagement."
+              cta="Discuter sur WhatsApp"
+            />
             <Services/>
+            <SectionCTA
+              message="Vous ne savez pas quel service vous convient ? On vous guide en 5 minutes."
+              cta="Obtenir un conseil →"
+            />
             <TrustBar/>
             <Process/>
             <MarqueeStrip/>
             <ProjectsCarousel/>
+            <SectionCTA
+              variant="strong"
+              message="Ces projets ont été livrés dans les délais, avec formation incluse. Le vôtre peut l'être aussi."
+              cta="Démarrer mon projet"
+            />
             <Pricing/>
             <Testimonials/>
+            <SectionCTA
+              message="Comme eux, donnez à votre activité la présence digitale qu'elle mérite."
+              cta="Rejoindre nos clients →"
+            />
             <FAQ/>
             <Contact/>
           </main>
@@ -2654,5 +2941,6 @@ export default function App() {
         </motion.div>
       )}
     </ThemeProvider>
+    </BannerCtx.Provider>
   )
 }
