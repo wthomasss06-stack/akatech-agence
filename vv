@@ -1,0 +1,3 @@
+cd akatech-agence
+npm install
+npm run dev

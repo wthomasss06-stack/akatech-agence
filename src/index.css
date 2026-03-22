@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+:root {
+  --g1: #22c864;
+  --g2: #1fb865;
+  --g3: #17a354;
+  --g4: #0d6e38;
+  --g5: #66ffaa;
+  --gdim: rgba(34,200,100,.1);
+  --gbor: rgba(34,200,100,.2);
+  --gbor2: rgba(34,200,100,.35);
+  --dark1: #08150e;
+  --dark2: #0a2e1a;
+  --dark3: #0d3d21;
+  --off: #f4faf6;
+  --gray1: #e8f4ed;
+  --gray2: #d5ebe0;
+  --text: #0e2217;
+  --text2: #3a6050;
+  --text3: #7a9888;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Exo 2', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-orb: 'Orbitron', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-heading);
+  color: var(--text);
+  background: #fff;
+  overflow-x: hidden;
+  line-height: 1.7;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--off); }
+::-webkit-scrollbar-thumb { background: var(--g1); border-radius: 2px; }
+
+img { max-width: 100%; display: block; object-fit: cover; }
+a { text-decoration: none; color: inherit; }
+
+/* ── LOGO ANIMATIONS ── */
+@keyframes akaGearSpin    { to { transform: rotate(360deg); } }
+@keyframes akaGearCounter { to { transform: rotate(-360deg); } }
+@keyframes akaHaloPulse   { 0%,100%{opacity:.5;transform:translateY(-50%) scale(1)} 50%{opacity:.9;transform:translateY(-50%) scale(1.2)} }
+@keyframes akaDotPulse    { 0%,100%{opacity:.5} 50%{opacity:1} }
+@keyframes akaLineTrace   { 0%{stroke-dashoffset:44;opacity:.3} 50%{stroke-dashoffset:0;opacity:1} 100%{stroke-dashoffset:-44;opacity:.3} }
+@keyframes akaTextIn      { from{opacity:0;transform:translateX(-14px)} to{opacity:1;transform:translateX(0)} }
+@keyframes akaGlowPulse   { 0%,100%{filter:drop-shadow(0 0 7px rgba(34,200,100,.4))} 50%{filter:drop-shadow(0 0 18px rgba(34,200,100,.8))} }
+@keyframes akaLineExpand  { from{transform:scaleX(0);opacity:0} to{transform:scaleX(1);opacity:1} }
+@keyframes akaFadeSlide   { from{opacity:0;transform:translateY(3px)} to{opacity:1;transform:translateY(0)} }
+@keyframes akaParticle    { 0%{opacity:0;transform:translate(0,0) scale(.4)} 20%{opacity:.8} 80%{opacity:.35} 100%{opacity:0;transform:translate(var(--ptx),var(--pty)) scale(0)} }
+@keyframes akaScan        { 0%{background-position:0 -40px} 100%{background-position:0 200%} }
+
+/* ── GLOBAL ANIMATIONS ── */
+@keyframes pulse-ring { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(1.8);opacity:0} }
+@keyframes float-y    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes blob-1     { 0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%} 50%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%} }
+@keyframes marquee    { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+@keyframes shimmer    { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+@keyframes loader-bar { from{width:0%} to{width:100%} }
+@keyframes spin-slow  { to{transform:rotate(360deg)} }
+@keyframes fade-up    { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── UTILITIES ── */
+.font-orb   { font-family: var(--font-orb); }
+.font-mono  { font-family: var(--font-mono); }
+.font-body  { font-family: var(--font-body); }
+.text-green { color: var(--g1); }
+.bg-green   { background-color: var(--g1); }
+
+.btn-green {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .82rem 1.9rem;
+  background: var(--g1); color: #fff;
+  border-radius: 8px; font-size: .9rem; font-weight: 700;
+  transition: all .22s; position: relative; overflow: hidden;
+  box-shadow: 0 0 22px rgba(34,200,100,.28);
+}
+.btn-green::after {
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.2) 50%,transparent 70%);
+  transform:translateX(-100%);transition:transform .4s;
+}
+.btn-green:hover { background: var(--g2); transform: translateY(-2px); box-shadow: 0 0 38px rgba(34,200,100,.45); }
+.btn-green:hover::after { transform: translateX(100%); }
+
+.btn-outline {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .82rem 1.9rem;
+  border: 2px solid var(--g1); color: var(--g2); background: transparent;
+  border-radius: 8px; font-size: .9rem; font-weight: 700;
+  transition: all .22s;
+}
+.btn-outline:hover { background: rgba(34,200,100,.07); transform: translateY(-2px); }
+
+.btn-outline-white {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .82rem 1.9rem;
+  border: 2px solid rgba(255,255,255,.35); color: #fff; background: transparent;
+  border-radius: 8px; font-size: .9rem; font-weight: 700;
+  transition: all .22s;
+}
+.btn-outline-white:hover { border-color: var(--g5); color: var(--g5); transform: translateY(-2px); }
+
+.section-eye {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: .65rem; color: var(--g2);
+  letter-spacing: .18em; text-transform: uppercase;
+  padding: .3rem .9rem;
+  background: rgba(34,200,100,.08);
+  border: 1px solid var(--gbor);
+  border-radius: 100px; margin-bottom: 1rem;
+}
+
+.section-eye-white {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: .65rem; color: var(--g5);
+  letter-spacing: .18em; text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.section-eye-white::before { content: '// '; }
+
+.card-hover {
+  transition: transform .28s, border-color .28s, box-shadow .28s;
+}
+.card-hover:hover {
+  transform: translateY(-6px);
+  border-color: var(--g1) !important;
+  box-shadow: 0 12px 48px rgba(13,70,35,.18);
+}
+
+.img-cover {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform .4s ease;
+}
+.img-wrap:hover .img-cover { transform: scale(1.06); }
+
+/* Placeholder when no image */
+.img-placeholder {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .8rem;
+  background: linear-gradient(135deg, var(--dark2), #0d4025);
+  color: rgba(255,255,255,.25);
+  font-family: var(--font-mono); font-size: .65rem;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--g5) 0%, var(--g2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* scrollbar for pricing tabs */
+.tabs-scroll { scrollbar-width: none; }
+.tabs-scroll::-webkit-scrollbar { display: none; }
