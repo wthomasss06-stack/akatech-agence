@@ -197,7 +197,48 @@ const GLOBAL_CSS = `
   }
 
   /* ── RESPONSIVE GRIDS ── */
-  .contact-grid   { display:grid; grid-template-columns:1fr 1.55fr; gap:2.5rem; align-items:start; }
+  /* ── CONTACT (nouveau système) ── */
+  .contact-grid         { display:grid; grid-template-columns:1fr 1.55fr; gap:2.5rem; align-items:start; }
+  .contact-left-mobile  { min-width:0; }
+  .contact-right-mobile { min-width:0; }
+  .contact-section      { padding:7rem 5%; overflow:hidden; }
+  .contact-input        { width:100%; max-width:100%; box-sizing:border-box; min-width:0; display:block; }
+  .contact-form         { width:100%; min-width:0; box-sizing:border-box; }
+  .contact-card-inner   { width:100%; min-width:0; overflow:hidden; box-sizing:border-box; }
+
+  /* Grille contact redessinée */
+  .ctt-grid {
+    display:grid;
+    grid-template-columns:1fr 1.5fr;
+    gap:2rem;
+    align-items:start;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .ctt-form-col { min-width:0; width:100%; box-sizing:border-box; }
+  .ctt-info-col { min-width:0; width:100%; box-sizing:border-box; }
+  .ctt-row {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:.8rem;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .ctt-field {
+    display:flex;
+    flex-direction:column;
+    gap:.35rem;
+    min-width:0;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .ctt-label {
+    font-family:'JetBrains Mono',monospace;
+    font-size:.57rem;
+    letter-spacing:.1em;
+    color:rgba(34,200,100,.55);
+    text-transform:uppercase;
+  }
   .form-row       { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
   .services-grid  { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.2rem; }
   .trust-grid     { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
@@ -270,6 +311,38 @@ const GLOBAL_CSS = `
   .nav-link-wrap::after { content:''; position:absolute; bottom:-2px; left:50%; right:50%; height:2px; border-radius:2px; background:linear-gradient(90deg,#22c864,#66ffaa); transition:left .25s ease,right .25s ease; }
   .nav-link-wrap:hover::after { left:0; right:0; }
 
+  /* ── NAV ICON TOOLTIP ── */
+  .nav-icon-btn { position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; padding:.45rem .7rem; cursor:pointer; border-radius:10px; transition:background .2s; }
+  .nav-icon-btn:hover { background:rgba(34,200,100,.07); }
+  .nav-icon-btn svg { transition:filter .25s, transform .25s; }
+  .nav-icon-btn:hover svg { filter:drop-shadow(0 0 6px rgba(34,200,100,.7)); transform:scale(1.18); }
+  .nav-tooltip {
+    position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%) translateY(-4px);
+    background:rgba(6,14,9,.96); border:1px solid rgba(34,200,100,.28); border-radius:8px;
+    padding:.3rem .75rem; font-family:'JetBrains Mono',monospace; font-size:.6rem;
+    letter-spacing:.09em; color:#66ffaa; text-transform:uppercase; white-space:nowrap;
+    pointer-events:none; opacity:0; transition:opacity .18s, transform .18s;
+    box-shadow:0 4px 18px rgba(0,0,0,.55); z-index:9999;
+  }
+  .nav-icon-btn:hover .nav-tooltip { opacity:1; transform:translateX(-50%) translateY(0); }
+  .nav-tooltip::before {
+    content:''; position:absolute; top:-5px; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top:none; border-bottom:5px solid rgba(34,200,100,.28);
+    filter:drop-shadow(0 -1px 0 rgba(34,200,100,.28));
+  }
+
+  /* ── SECTION GHOST TITLE ── */
+  .s-ghost-wrap { position:relative; display:inline-block; }
+  .s-ghost-txt {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-family:'Orbitron','Arial Black',sans-serif; font-weight:900;
+    font-size:clamp(3.5rem,9vw,8rem); white-space:nowrap; pointer-events:none;
+    color:transparent; -webkit-text-stroke:1px rgba(34,200,100,.07);
+    letter-spacing:.06em; text-transform:uppercase; user-select:none; z-index:0;
+    animation:ghost-drift 8s ease-in-out infinite;
+  }
+  @keyframes ghost-drift { 0%,100%{opacity:.65;transform:translate(-50%,-50%) scale(1)} 50%{opacity:.9;transform:translate(-50%,-52%) scale(1.01)} }
+
   .marquee-item { transition:color .2s,text-shadow .2s; cursor:default; }
   .marquee-item:hover { color:rgba(34,200,100,.9) !important; text-shadow:0 0 12px rgba(34,200,100,.5); }
   .marquee-item:hover .marquee-dot { transform:scale(1.8); background:#66ffaa; box-shadow:0 0 8px rgba(34,200,100,.8); }
@@ -330,7 +403,7 @@ const GLOBAL_CSS = `
   .footer-link { transition:color .2s,padding-left .18s !important; }
   .footer-link:hover { padding-left:.55rem !important; }
 
-  /* TABLET */
+  /* ── TABLET ── */
   @media(max-width:1024px){
     .footer-grid  { grid-template-columns:1fr 1fr; }
     .trust-grid   { grid-template-columns:repeat(2,1fr); }
@@ -340,77 +413,204 @@ const GLOBAL_CSS = `
 
   /* ── MOBILE 768px ── */
   @media(max-width:768px){
-    /* Force contact single column on mobile — override inline style */
-    .contact-grid   { grid-template-columns:1fr; }
-    .contact-left-mobile  { order:2 !important; }
-    .contact-right-mobile { order:1 !important; }
-    .form-row       { grid-template-columns:1fr 1fr; gap:.7rem; }
-    .trust-grid     { grid-template-columns:repeat(2,1fr); }
+    /* ── CONTACT : 1 colonne verticale ── */
+    .contact-grid         { grid-template-columns:1fr !important; gap:1.5rem !important; }
+    .contact-left-mobile  { order:2 !important; width:100% !important; min-width:0 !important; }
+    .contact-right-mobile { order:1 !important; width:100% !important; min-width:0 !important; }
+    .contact-card         { padding:1.4rem !important; width:100% !important; box-sizing:border-box !important; overflow:hidden !important; }
+    .contact-card-inner   { width:100% !important; overflow:hidden !important; }
+    .contact-input        { width:100% !important; max-width:100% !important; box-sizing:border-box !important; }
+    .contact-form         { width:100% !important; overflow:hidden !important; }
+    .contact-socials      { grid-template-columns:1fr 1fr !important; gap:.6rem; }
+    .contact-stat         { grid-template-columns:repeat(3,1fr); gap:.5rem; }
+    .form-row             { grid-template-columns:1fr !important; gap:.8rem; }
+    /* Nouveau système contact */
+    .ctt-grid  { grid-template-columns:1fr !important; gap:1.2rem !important; }
+    .ctt-form-col { order:1 !important; }
+    .ctt-info-col { order:2 !important; }
+    .ctt-row   { grid-template-columns:1fr !important; }
+
+    /* ── LAYOUT GÉNÉRAL ── */
     .footer-grid    { grid-template-columns:1fr 1fr; }
-    .contact-socials{ grid-template-columns:repeat(2,1fr); }
-    .contact-stat   { grid-template-columns:repeat(3,1fr); }
-    .hero-section   { padding:5rem 4% 4rem !important; }
-    .section-pad    { padding:4rem 4% !important; }
-    .temo-card      { padding:1.6rem 1.2rem !important; }
-    .contact-card   { padding:1.6rem 1.2rem !important; }
     .about-grid     { grid-template-columns:1fr; gap:2rem; }
     .about-photos   { grid-template-columns:1fr 1fr; grid-template-rows:160px 130px; gap:.6rem; }
     .about-stats    { grid-template-columns:repeat(3,1fr); }
+    .temo-card      { padding:1.6rem 1.2rem !important; }
     .btn-raised, .btn-ghost { min-height:48px; }
-    h2 { font-size:clamp(1.5rem,5vw,2.2rem) !important; }
-    /* Hero trust bar: 4 colonnes compactes */
+    h2              { font-size:clamp(1.4rem,5vw,2.1rem) !important; }
+    section         { padding-left:4% !important; padding-right:4% !important; }
+
+    /* ── HERO TRUST BAR : 4 colonnes horizontales ── */
     .hero-trust-bar {
       display:grid !important;
       grid-template-columns:repeat(4,1fr) !important;
-      gap:.4rem !important;
-      padding:.75rem !important;
-      width:calc(100vw - 3rem) !important;
-      max-width:500px !important;
+      gap:.35rem !important;
+      padding:.7rem .9rem !important;
+      width:100% !important;
+      max-width:100% !important;
     }
-    /* Services scroll horizontal */
-    .svc-scroll { overflow-x:auto !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch; scrollbar-width:none; display:flex !important; gap:.8rem; padding-bottom:.4rem; }
+
+    /* ── CAROUSELS HORIZONTAUX — largeur raisonnable ── */
+    /* Services : ~80vw par carte */
+    .svc-scroll {
+      overflow-x:auto !important;
+      scroll-snap-type:x mandatory !important;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      display:flex !important;
+      gap:.8rem;
+      padding:0 4% .5rem !important;
+      margin:0 -4%;
+    }
     .svc-scroll::-webkit-scrollbar { display:none; }
-    .svc-scroll > * { scroll-snap-align:start; min-width:82vw !important; flex-shrink:0 !important; }
+    .svc-scroll > * {
+      scroll-snap-align:start;
+      min-width:78vw !important;
+      max-width:78vw !important;
+      flex-shrink:0 !important;
+    }
+
     /* Trust 2×2 */
     .trust-grid { grid-template-columns:repeat(2,1fr) !important; gap:.7rem !important; }
-    /* Process scroll horizontal */
-    .proc-scroll { overflow-x:auto !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch; scrollbar-width:none; display:flex !important; gap:1rem; padding-bottom:.5rem; }
+
+    /* Process : ~72vw par étape */
+    .proc-scroll {
+      overflow-x:auto !important;
+      scroll-snap-type:x mandatory !important;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      display:flex !important;
+      gap:.8rem;
+      padding:0 4% .5rem !important;
+      margin:0 -4%;
+    }
     .proc-scroll::-webkit-scrollbar { display:none; }
-    .proc-scroll > * { scroll-snap-align:center; min-width:68vw !important; flex-shrink:0 !important; }
-    /* Projects 1 par 1 sur mobile */
-    .proj-mobile-1 { grid-template-columns:100% !important; }
-    /* Pricing carousel */
-    .pricing-mobile-scroll { display:flex !important; overflow-x:auto !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch; scrollbar-width:none; gap:1rem; }
+    .proc-scroll > * {
+      scroll-snap-align:center;
+      min-width:72vw !important;
+      max-width:72vw !important;
+      flex-shrink:0 !important;
+    }
+
+    /* Pricing : ~82vw par plan */
+    .pricing-mobile-scroll {
+      display:flex !important;
+      overflow-x:auto !important;
+      scroll-snap-type:x mandatory !important;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      gap:.8rem;
+      padding:0 4% .5rem !important;
+      margin:0 -4%;
+    }
     .pricing-mobile-scroll::-webkit-scrollbar { display:none; }
-    .pricing-mobile-scroll > * { scroll-snap-align:start; min-width:80vw !important; flex-shrink:0 !important; }
-    /* Pricing tabs scroll horiz */
-    .pricing-tabs { flex-wrap:nowrap !important; overflow-x:auto !important; justify-content:flex-start !important; padding-bottom:.3rem; scrollbar-width:none; }
+    .pricing-mobile-scroll > * {
+      scroll-snap-align:start;
+      min-width:82vw !important;
+      max-width:82vw !important;
+      flex-shrink:0 !important;
+    }
+
+    /* Pricing tabs scroll */
+    .pricing-tabs {
+      flex-wrap:nowrap !important;
+      overflow-x:auto !important;
+      justify-content:flex-start !important;
+      padding-bottom:.3rem;
+      scrollbar-width:none;
+      -webkit-overflow-scrolling:touch;
+    }
     .pricing-tabs::-webkit-scrollbar { display:none; }
+    .pricing-tabs button { flex-shrink:0 !important; }
   }
 
   /* ── MOBILE 480px ── */
   @media(max-width:480px){
-    .footer-grid    { grid-template-columns:1fr; }
-    .contact-socials{ grid-template-columns:1fr 1fr; }
-    .contact-stat   { grid-template-columns:repeat(3,1fr); gap:.35rem; }
-    .form-row       { grid-template-columns:1fr; }
-    .about-photos   { grid-template-columns:1fr 1fr; grid-template-rows:120px 100px; gap:.4rem; }
-    .about-stats    { grid-template-columns:repeat(3,1fr); gap:.4rem; }
-    .hero-trust-bar { gap:.25rem !important; padding:.6rem !important; }
-    .hero-cta-row   { flex-direction:column !important; align-items:stretch !important; }
-    .hero-cta-row a { justify-content:center !important; }
-    .svc-scroll > * { min-width:88vw !important; }
-    .proc-scroll > * { min-width:78vw !important; }
-    .pricing-mobile-scroll > * { min-width:88vw !important; }
+    .footer-grid          { grid-template-columns:1fr; }
+    .contact-socials      { grid-template-columns:1fr 1fr !important; }
+    .contact-stat         { grid-template-columns:repeat(3,1fr) !important; gap:.3rem; }
+    .about-photos         { grid-template-columns:1fr 1fr; grid-template-rows:120px 100px; gap:.4rem; }
+    .about-stats          { grid-template-columns:repeat(3,1fr); gap:.4rem; }
+    .hero-trust-bar       { gap:.2rem !important; padding:.55rem !important; }
+    .hero-cta-row         { flex-direction:column !important; align-items:stretch !important; }
+    .hero-cta-row a       { justify-content:center !important; }
+    /* Cartes un peu plus larges sur petits écrans */
+    .svc-scroll > *           { min-width:86vw !important; max-width:86vw !important; }
+    .proc-scroll > *          { min-width:80vw !important; max-width:80vw !important; }
+    .pricing-mobile-scroll > *{ min-width:88vw !important; max-width:88vw !important; }
   }
 
-  /* ── SCROLL HINT INDICATOR ── */
-  @keyframes scroll-hint-arrow {
-    0%,100% { opacity:.3; transform:translateX(0); }
-    50%      { opacity:1;  transform:translateX(2px); }
+  /* ── SCROLL HINT : CSS-only, style dots comme Réalisations ── */
+  .scroll-hint-mobile { display:none; }
+  @media(max-width:768px){
+    .scroll-hint-mobile {
+      display:flex !important;
+      align-items:center;
+      gap:.5rem;
+      margin-bottom:.9rem;
+      padding:0 .2rem;
+    }
+    /* Label texte */
+    .scroll-hint-mobile .sh-label {
+      font-family:'JetBrains Mono',monospace;
+      font-size:.58rem;
+      color:rgba(34,200,100,.45);
+      letter-spacing:.1em;
+      text-transform:uppercase;
+    }
+    /* Dots identiques aux dots de Réalisations */
+    .scroll-hint-mobile .sh-dots {
+      display:flex;
+      gap:.3rem;
+      align-items:center;
+      margin-left:auto;
+    }
+    .scroll-hint-mobile .sh-dot {
+      height:6px;
+      border-radius:3px;
+      background:rgba(34,200,100,.2);
+      transition:all .3s;
+    }
+    .scroll-hint-mobile .sh-dot.active {
+      width:20px;
+      background:#22c864;
+    }
+    .scroll-hint-mobile .sh-dot:not(.active) {
+      width:6px;
+    }
+    /* Flèche animée CSS */
+    .scroll-hint-mobile .sh-arrow {
+      display:flex;
+      align-items:center;
+      gap:.2rem;
+      color:rgba(34,200,100,.5);
+    }
+    .scroll-hint-mobile .sh-arrow svg {
+      animation:sh-bounce 1.3s ease-in-out infinite;
+    }
+    @keyframes sh-bounce {
+      0%,100% { transform:translateX(0); opacity:.4; }
+      50%      { transform:translateX(4px); opacity:1; }
+    }
   }
-  @media(max-width:768px) {
-    .scroll-hint-mobile { display:flex !important; }
+
+  /* ── LOADER RESPONSIVE ── */
+  :root { --loader-scale: 1; }
+  @media(max-width:768px) { :root { --loader-scale: 0.72; } }
+  @media(max-width:480px) { :root { --loader-scale: 0.56; } }
+  .loader-wrap {
+    width:min(280px, 80vw);
+  }
+  .loader-logo-size { transition:transform .3s; }
+  @media(max-width:768px){
+    .loader-logo-size { transform:scale(.75); transform-origin:center; }
+    .loader-wrap      { width:min(220px, 78vw); }
+    .loader-msg       { font-size:.52rem !important; letter-spacing:.1em !important; }
+  }
+  @media(max-width:480px){
+    .loader-logo-size { transform:scale(.62); transform-origin:center; }
+    .loader-wrap      { width:min(180px, 82vw); }
+    .loader-msg       { font-size:.48rem !important; letter-spacing:.08em !important; }
   }
 
   /* ── HAMBURGER BOTTOM SHEET ── */
@@ -535,7 +735,23 @@ function Logo({ size=48, animate=true, onClick, showTag=true }) {
   )
 }
 
-// ── LOADER ───────────────────────────────────────────────────
+// ── SECTION EYE WITH GHOST BACKDROP ─────────────────────────
+function SectionEye({ label, ghost, center }) {
+  return (
+    <div style={{ position:'relative', marginBottom:'.8rem', display: center ? 'flex' : 'block', justifyContent: center ? 'center' : undefined }}>
+      {ghost && (
+        <span className="s-ghost-txt" style={{ fontSize:'clamp(2.8rem,7vw,6rem)' }}>
+          {ghost}
+        </span>
+      )}
+      <div className="s-eye" style={center ? { justifyContent:'center', position:'relative', zIndex:1 } : { position:'relative', zIndex:1 }}>
+        {label}
+      </div>
+    </div>
+  )
+}
+
+
 function Loader({ onDone }) {
   const [progress, setProgress] = useState(0)
   const [visible, setVisible] = useState(true)
@@ -554,15 +770,20 @@ function Loader({ onDone }) {
   return (
     <AnimatePresence>
       {visible&&(
-        <motion.div exit={{opacity:0}} transition={{duration:.7}} style={{position:'fixed',inset:0,zIndex:9999,background:'#030806',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'2.5rem'}}>
-          <motion.div initial={{opacity:0,scale:.86}} animate={{opacity:1,scale:1}} transition={{duration:.8,ease:[.22,1,.36,1]}}>
-            <Logo size={60} animate showTag/>
+        <motion.div exit={{opacity:0}} transition={{duration:.7}}
+          style={{position:'fixed',inset:0,zIndex:9999,background:'#030806',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'1.5rem',padding:'1.5rem',boxSizing:'border-box'}}>
+          {/* Logo — taille responsive via CSS */}
+          <motion.div initial={{opacity:0,scale:.86}} animate={{opacity:1,scale:1}} transition={{duration:.8,ease:[.22,1,.36,1]}}
+            style={{transform:'scale(var(--loader-scale,1))',transformOrigin:'center'}}>
+            <Logo size={52} animate showTag/>
           </motion.div>
-          <motion.div style={{width:280}} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:.3}}>
+          {/* Barre de progression */}
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:.3}}
+            style={{width:'min(260px,72vw)'}}>
             <div style={{height:2,background:'rgba(34,200,100,.1)',borderRadius:2,overflow:'hidden',marginBottom:'.5rem'}}>
               <div style={{height:'100%',borderRadius:2,background:'linear-gradient(90deg,#17a354,#66ffaa)',width:`${progress}%`,transition:'width .06s linear'}}/>
             </div>
-            <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.6rem',letterSpacing:'.14em',color:'rgba(34,200,100,.4)',textTransform:'uppercase',textAlign:'center'}}>{msg}</p>
+            <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'clamp(.48rem,.12rem + 1.2vw,.6rem)',letterSpacing:'.12em',color:'rgba(34,200,100,.4)',textTransform:'uppercase',textAlign:'center'}}>{msg}</p>
           </motion.div>
         </motion.div>
       )}
@@ -571,7 +792,23 @@ function Loader({ onDone }) {
 }
 
 // ── NAVBAR ───────────────────────────────────────────────────
-const NAV = [{href:'#accueil',label:'Accueil'},{href:'#apropos',label:'À propos'},{href:'#services',label:'Services'},{href:'#projets',label:'Réalisations'},{href:'#tarifs',label:'Tarifs'},{href:'#contact',label:'Contact'}]
+// Inline SVG icons for each nav item (animated on hover via CSS)
+const NAV_ICONS = {
+  accueil: (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>),
+  apropos: (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>),
+  services: (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="8" height="8" rx="1.5"/><rect x="14" y="3" width="8" height="8" rx="1.5"/><rect x="2" y="13" width="8" height="8" rx="1.5"/><rect x="14" y="13" width="8" height="8" rx="1.5"/></svg>),
+  projets: (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="9" height="9" rx="1.5"/><rect x="13" y="2" width="9" height="5" rx="1.5"/><rect x="13" y="11" width="9" height="11" rx="1.5"/><rect x="2" y="15" width="9" height="7" rx="1.5"/></svg>),
+  tarifs: (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v2m0 8v2M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/></svg>),
+  contact: (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>),
+}
+const NAV = [
+  {href:'#accueil',  label:'Accueil',      iconKey:'accueil'},
+  {href:'#apropos',  label:'À propos',     iconKey:'apropos'},
+  {href:'#services', label:'Services',     iconKey:'services'},
+  {href:'#projets',  label:'Réalisations', iconKey:'projets'},
+  {href:'#tarifs',   label:'Tarifs',       iconKey:'tarifs'},
+  {href:'#contact',  label:'Contact',      iconKey:'contact'},
+]
 
 function Navbar() {
   const [scrolled,setScrolled]=useState(false)
@@ -579,37 +816,63 @@ function Navbar() {
   const [open,setOpen]=useState(false)
   useEffect(()=>{
     const fn=()=>{ const y=window.scrollY; setScrolled(y>60); const ss=document.querySelectorAll('section[id],div[id]'); let c=''; ss.forEach(s=>{if(y>=s.offsetTop-130)c=s.id}); setActive(c) }
-    window.addEventListener('scroll',fn,{passive:true}); return()=>window.removeEventListener('scroll',fn)
+    window.addEventListener('scroll',fn,{passive:true}); fn(); return()=>window.removeEventListener('scroll',fn)
   },[])
   return (
     <>
       <motion.nav
-        className="fixed left-0 right-0 z-[900] flex items-center justify-between px-6"
+        className="fixed left-0 right-0 z-[900]"
         style={{
           top:0, height:64,
+          display:'flex',
+          alignItems:'center',
+          padding: scrolled ? '0 1.2rem 0 0.5rem' : '0 1.5rem 0 0.5rem',
           background:scrolled?'rgba(3,8,6,.92)':'transparent',
           backdropFilter:scrolled?'blur(20px)':'none',
           borderBottom:scrolled?'1px solid rgba(34,200,100,.1)':'none',
-          transition:'all .3s',
+          transition:'all .4s cubic-bezier(.22,1,.36,1)',
         }}
       >
-        <a href="#accueil"><Logo size={28} animate={false} showTag={false}/></a>
-        <ul className="hidden md:flex items-center gap-1 list-none">
-          {NAV.map(({href,label})=>(
-            <li key={href}>
-              <a href={href} className="nav-link-wrap" style={{
-                display:'block', padding:'.5rem 1rem', fontSize:'.85rem', fontWeight:600,
-                color:active===href.slice(1)?'#22c864':'rgba(255,255,255,.55)',
-                transition:'color .2s', fontFamily:"'Syne',sans-serif", letterSpacing:'.01em',
-              }}
-              onMouseEnter={e=>e.currentTarget.style.color='#66ffaa'}
-              onMouseLeave={e=>e.currentTarget.style.color=active===href.slice(1)?'#22c864':'rgba(255,255,255,.55)'}
-              >{label}</a>
-            </li>
-          ))}
+        {/* Logo — always left */}
+        <a href="#accueil" style={{flexShrink:0,zIndex:2}}>
+          <Logo size={28} animate={false} showTag={false}/>
+        </a>
+
+        {/* Desktop nav icons
+            — Before scroll: flex-1, justify-content:space-evenly → icons fill remaining space
+            — After scroll:  auto width, justify-content:flex-end → compact at right */}
+        <ul
+          className="hidden md:flex items-center list-none"
+          style={{
+            flex: scrolled ? '0 0 auto' : '1',
+            justifyContent: scrolled ? 'flex-end' : 'space-evenly',
+            gap: scrolled ? '0' : '0',
+            marginLeft: scrolled ? 'auto' : '0',
+            transition:'all .4s cubic-bezier(.22,1,.36,1)',
+            overflow:'hidden',
+          }}
+        >
+          {NAV.map(({href,label,iconKey})=>{
+            const isActive = active===href.slice(1)
+            return (
+              <li key={href} style={{ flex: scrolled ? '0 0 auto' : '1', display:'flex', justifyContent:'center', transition:'flex .4s cubic-bezier(.22,1,.36,1)' }}>
+                <a href={href} className="nav-icon-btn"
+                  style={{ color: isActive ? '#22c864' : 'rgba(255,255,255,.45)', textDecoration:'none', position:'relative', width: scrolled ? 'auto' : '100%', justifyContent:'center' }}
+                  onMouseEnter={e=>{ e.currentTarget.style.color='#66ffaa' }}
+                  onMouseLeave={e=>{ e.currentTarget.style.color=isActive?'#22c864':'rgba(255,255,255,.45)' }}
+                >
+                  {isActive && <span style={{position:'absolute',bottom:4,left:'50%',transform:'translateX(-50%)',width:4,height:4,borderRadius:'50%',background:'#22c864',boxShadow:'0 0 8px rgba(34,200,100,.8)'}}/>}
+                  {NAV_ICONS[iconKey]}
+                  <span className="nav-tooltip">{label}</span>
+                </a>
+              </li>
+            )
+          })}
         </ul>
 
-        <button className="md:hidden" onClick={()=>setOpen(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',color:'#66ffaa',padding:'.4rem',borderRadius:8,transition:'background .2s'}}
+        {/* Mobile hamburger */}
+        <button className="md:hidden" onClick={()=>setOpen(v=>!v)}
+          style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'#66ffaa',padding:'.4rem',borderRadius:8,transition:'background .2s'}}
           onMouseEnter={e=>e.currentTarget.style.background='rgba(34,200,100,.08)'}
           onMouseLeave={e=>e.currentTarget.style.background='none'}>
           {open?<X size={22}/>:<Menu size={22}/>}
@@ -638,14 +901,15 @@ function Navbar() {
 
               {/* Links */}
               <div style={{display:'flex',flexDirection:'column',gap:'.15rem',marginBottom:'1.2rem'}}>
-                {NAV.map(({href,label},i)=>(
+                {NAV.map(({href,label,iconKey},i)=>(
                   <motion.a key={href} href={href} onClick={()=>setOpen(false)}
                     initial={{opacity:0,x:-16}} animate={{opacity:1,x:0}} transition={{delay:i*.05}}
-                    style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.9rem 1rem',fontSize:'1rem',fontWeight:600,color:active===href.slice(1)?'#22c864':'rgba(255,255,255,.75)',borderBottom:'1px solid rgba(34,200,100,.07)',fontFamily:"'Syne',sans-serif",borderRadius:10,transition:'background .2s'}}
+                    style={{display:'flex',alignItems:'center',gap:'.85rem',padding:'.9rem 1rem',fontSize:'1rem',fontWeight:600,color:active===href.slice(1)?'#22c864':'rgba(255,255,255,.75)',borderBottom:'1px solid rgba(34,200,100,.07)',fontFamily:"'Syne',sans-serif",borderRadius:10,transition:'background .2s',textDecoration:'none'}}
                     onMouseEnter={e=>{e.currentTarget.style.background='rgba(34,200,100,.06)';e.currentTarget.style.color='#66ffaa'}}
                     onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color=active===href.slice(1)?'#22c864':'rgba(255,255,255,.75)'}}
                   >
-                    <span>{label}</span>
+                    <span style={{color:active===href.slice(1)?'#22c864':'rgba(34,200,100,.55)',flexShrink:0,display:'flex',alignItems:'center'}}>{NAV_ICONS[iconKey]}</span>
+                    <span style={{flex:1}}>{label}</span>
                     <ChevronRight size={14} style={{color:'rgba(34,200,100,.35)',flexShrink:0}}/>
                   </motion.a>
                 ))}
@@ -921,7 +1185,7 @@ function About() {
 
           {/* ── RIGHT: Content ── */}
           <motion.div initial={{ opacity:0, x:30 }} animate={inView ? { opacity:1, x:0 } : {}} transition={{ duration:.7, ease:[.22,1,.36,1] }}>
-            <div className="s-eye">// À propos</div>
+            <SectionEye label="// À propos" ghost="ABOUT"/>
             <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:'#fff', letterSpacing:'-.03em', lineHeight:1.15, marginBottom:'1.4rem' }}>
               Transformer vos idées<br/>
               <span className="text-gradient-anim">en réalité digitale</span>
@@ -1017,31 +1281,21 @@ function About() {
   )
 }
 
-// ── SCROLL HINT (indicateur de swipe horizontal) ─────────────
+// ── SCROLL HINT (CSS-only, style identique aux dots de Réalisations) ────
 function ScrollHint({ label = 'Faites glisser' }) {
   return (
-    <div className="scroll-hint-mobile" style={{
-      display:'none', // masqué sur desktop, visible via CSS mobile
-      alignItems:'center', justifyContent:'center', gap:'.5rem',
-      marginBottom:'.8rem',
-      fontFamily:"'JetBrains Mono',monospace",
-      fontSize:'.6rem', color:'rgba(34,200,100,.5)',
-      letterSpacing:'.1em', textTransform:'uppercase',
-    }}>
-      {/* Flèche gauche */}
-      <svg width="20" height="12" viewBox="0 0 20 12" fill="none" style={{flexShrink:0}}>
-        <path d="M7 2L2 6L7 10" stroke="#22c864" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-          style={{animation:'scroll-hint-arrow 1.4s ease-in-out infinite'}}/>
-        <line x1="2" y1="6" x2="18" y2="6" stroke="rgba(34,200,100,.3)" strokeWidth="1" strokeLinecap="round"/>
-        <path d="M13 2L18 6L13 10" stroke="#22c864" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-          style={{animation:'scroll-hint-arrow 1.4s .2s ease-in-out infinite'}}/>
-      </svg>
-      <span>{label}</span>
-      {/* Petits points de pagination */}
-      <div style={{display:'flex', gap:'.3rem', alignItems:'center'}}>
-        {[0,1,2].map(i=>(
-          <div key={i} style={{width: i===0?14:5, height:5, borderRadius:3, background: i===0?'#22c864':'rgba(34,200,100,.25)', transition:'all .3s'}}/>
-        ))}
+    <div className="scroll-hint-mobile">
+      <div className="sh-arrow">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+          <path d="M3 2L8 6L3 10" stroke="#22c864" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M9 2L14 6L9 10" stroke="#22c864" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity=".5"/>
+        </svg>
+      </div>
+      <span className="sh-label">{label}</span>
+      <div className="sh-dots">
+        <span className="sh-dot active"/>
+        <span className="sh-dot"/>
+        <span className="sh-dot"/>
       </div>
     </div>
   )
@@ -1108,7 +1362,7 @@ function Services() {
       <div className="grid-bg" style={{position:'absolute',inset:0,opacity:.4}}/>
       <div style={{maxWidth:1200,margin:'0 auto',position:'relative',zIndex:1}}>
         <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.6}} style={{textAlign:'center',marginBottom:'4rem'}}>
-          <div className="s-eye" style={{justifyContent:'center'}}>// Nos Services</div>
+          <SectionEye label="// Nos Services" ghost="SERVICES" center/>
           <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",letterSpacing:'-.03em',lineHeight:1.15,color:'#fff'}}>
             Des services conçus pour<br/>
             <span className="text-gradient-anim">faire grandir votre business</span>
@@ -1164,7 +1418,7 @@ function TrustBar() {
       <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'60vw',height:'60vw',maxWidth:700,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 60%)',pointerEvents:'none'}}/>
       <div style={{maxWidth:1200,margin:'0 auto',position:'relative',zIndex:1}}>
         <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.6}} style={{textAlign:'center',marginBottom:'3.5rem'}}>
-          <div className="s-eye" style={{justifyContent:'center'}}>// Built on Trust</div>
+          <SectionEye label="// Built on Trust" ghost="TRUST" center/>
           <h2 style={{fontSize:'clamp(1.9rem,3vw,2.6rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
             Construit sur la confiance.{' '}<span style={{color:'#22c864'}}>Porté par les résultats.</span>
           </h2>
@@ -1307,7 +1561,7 @@ function Process() {
       <div className="grid-bg" style={{ position:'absolute', inset:0, opacity:.3 }}/>
       <div style={{ maxWidth:1200, margin:'0 auto', position:'relative', zIndex:1 }}>
         <motion.div initial={{ opacity:0, y:20 }} animate={inView ? { opacity:1, y:0 } : {}} style={{ textAlign:'center', marginBottom:'4rem' }}>
-          <div className="s-eye" style={{ justifyContent:'center' }}>// Notre Processus</div>
+          <SectionEye label="// Notre Processus" ghost="PROCESS" center/>
           <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:'#fff', letterSpacing:'-.03em' }}>
             Notre processus <span style={{ color:'#22c864' }}>éprouvé</span>
           </h2>
@@ -1423,7 +1677,7 @@ function ProjectsCarousel() {
       <div style={{maxWidth:1200,margin:'0 auto',position:'relative',zIndex:1}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'3rem',flexWrap:'wrap',gap:'1rem'}}>
           <motion.div initial={{opacity:0,x:-20}} animate={inView?{opacity:1,x:0}:{}}>
-            <div className="s-eye">// Réalisations</div>
+            <SectionEye label="// Réalisations" ghost="WORK"/>
             <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
               Ils ont fait <span style={{color:'#22c864'}}>confiance à AKATech</span>
             </h2>
@@ -1525,7 +1779,7 @@ function Pricing() {
       <div className="grid-bg" style={{position:'absolute',inset:0,opacity:.3}}/>
       <div style={{maxWidth:1200,margin:'0 auto',position:'relative',zIndex:1}}>
         <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} style={{textAlign:'center',marginBottom:'3rem'}}>
-          <div className="s-eye" style={{justifyContent:'center'}}>// Tarifs</div>
+          <SectionEye label="// Tarifs" ghost="PRICING" center/>
           <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
             Nos offres & <span style={{color:'#22c864'}}>tarifs clairs</span>
           </h2>
@@ -1584,13 +1838,6 @@ const TEMOS=[
   {name:'Yao Darwell',role:'Graphiste · Designer',project:'Portfolio',rating:5,text:"Mon portfolio m'a permis d'obtenir 3 nouveaux clients en un mois. Design superbe, animations fluides. AKATech comprend vraiment les créatifs.",img:'/images/clients/client-3.jpg',result:'↑ CA en 30 jours'},
 ]
 
-// Stats globales des témoignages
-const TEMO_STATS = [
-  { val:'100%', label:'Clients satisfaits' },
-  { val:'5 ★',  label:'Note moyenne' },
-  { val:'< 1sem', label:'Délai moyen' },
-]
-
 function AvatarFallback({name,size=52}){
   const initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
   return(
@@ -1638,22 +1885,11 @@ function Testimonials() {
 
         {/* ── Header ── */}
         <motion.div initial={{ opacity:0, y:20 }} animate={inView?{opacity:1,y:0}:{}} style={{ textAlign:'center', marginBottom:'3.5rem' }}>
-          <div className="s-eye" style={{ justifyContent:'center' }}>// Témoignages</div>
+          <SectionEye label="// Témoignages" ghost="REVIEWS" center/>
           <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:'#fff', letterSpacing:'-.03em' }}>
             Ils ont fait confiance à <span style={{ color:'#22c864' }}>AKATech</span>
           </h2>
           <p style={{ marginTop:'.8rem', fontSize:'.9rem', color:'rgba(255,255,255,.4)' }}>Des résultats concrets pour de vraies entreprises.</p>
-
-          {/* Stats rapides */}
-          <motion.div initial={{ opacity:0, y:12 }} animate={inView?{opacity:1,y:0}:{}} transition={{ delay:.2 }}
-            style={{ display:'inline-flex', gap:'2rem', marginTop:'1.8rem', padding:'.9rem 2rem', borderRadius:100, background:'rgba(34,200,100,.05)', border:'1px solid rgba(34,200,100,.15)', flexWrap:'wrap', justifyContent:'center' }}>
-            {TEMO_STATS.map(({ val, label }) => (
-              <div key={label} style={{ textAlign:'center' }}>
-                <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:'1rem', fontWeight:900, color:'#22c864', lineHeight:1 }}>{val}</div>
-                <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.52rem', color:'rgba(255,255,255,.35)', textTransform:'uppercase', letterSpacing:'.07em', marginTop:'.2rem' }}>{label}</div>
-              </div>
-            ))}
-          </motion.div>
         </motion.div>
 
         {/* ── Carousel principal ── */}
@@ -1766,37 +2002,7 @@ function Testimonials() {
               <ChevronRight size={16} style={{ color:'#fff' }}/>
             </motion.button>
           </div>
-
-          {/* ── Mini cards des autres témoignages ── */}
-          <motion.div initial={{ opacity:0, y:16 }} animate={inView?{opacity:1,y:0}:{}} transition={{ delay:.4 }}
-            style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:'.8rem', marginTop:'2rem' }}>
-            {TEMOS.map((tm, i) => i !== idx && (
-              <motion.div key={i} onClick={() => setIdx(i)} whileHover={{ y:-3, borderColor:'rgba(34,200,100,.35)' }}
-                style={{ padding:'1rem 1.2rem', borderRadius:14, background:'rgba(34,200,100,.03)', border:`1px solid ${i===idx?'rgba(34,200,100,.3)':'rgba(34,200,100,.1)'}`, cursor:'pointer', transition:'border-color .2s', display:'flex', alignItems:'center', gap:'.8rem' }}>
-                {imgErr[i] ? <AvatarFallback name={tm.name} size={36}/> : (
-                  <LazyImg src={tm.img} alt={tm.name}
-                    style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'1.5px solid rgba(34,200,100,.2)', display:'block', flexShrink:0 }}
-                    placeholder={<AvatarFallback name={tm.name} size={36}/>}
-                  />
-                )}
-                <div style={{ minWidth:0 }}>
-                  <div style={{ fontSize:'.78rem', fontWeight:700, color:'rgba(255,255,255,.75)', fontFamily:"'Syne',sans-serif", overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{tm.name}</div>
-                  <div style={{ fontSize:'.6rem', color:'rgba(34,200,100,.5)', fontFamily:"'JetBrains Mono',monospace", marginTop:'.1rem' }}>{tm.project}</div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
-
-        {/* ── CTA bas ── */}
-        <motion.div initial={{ opacity:0, y:14 }} animate={inView?{opacity:1,y:0}:{}} transition={{ delay:.6 }}
-          style={{ textAlign:'center', marginTop:'3rem' }}>
-          <a href="https://wa.me/2250142507750?text=Bonjour+AKATech+!" target="_blank" rel="noreferrer"
-            className="btn-raised" style={{ display:'inline-flex', gap:'.5rem' }}>
-            <MessageCircle size={16}/>Rejoindre nos clients satisfaits
-          </a>
-        </motion.div>
-
       </div>
     </section>
   )
@@ -1820,7 +2026,7 @@ function FAQ() {
       <div className="grid-bg" style={{position:'absolute',inset:0,opacity:.3}}/>
       <div style={{maxWidth:800,margin:'0 auto',position:'relative',zIndex:1}}>
         <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} style={{textAlign:'center',marginBottom:'3.5rem'}}>
-          <div className="s-eye" style={{justifyContent:'center'}}>// FAQ</div>
+          <SectionEye label="// FAQ" ghost="FAQ" center/>
           <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
             Questions <span style={{color:'#22c864'}}>fréquentes</span>
           </h2>
@@ -1852,13 +2058,11 @@ function FAQ() {
 }
 
 // ── CONTACT ───────────────────────────────────────────────────
-const iStyle={width:'100%',background:'linear-gradient(145deg,var(--card),var(--card2))',border:'1px solid rgba(34,200,100,.15)',borderRadius:10,padding:'.8rem 1.1rem',color:'rgba(255,255,255,.85)',fontFamily:"'Syne',sans-serif",fontSize:'.88rem',outline:'none',boxShadow:'inset 3px 3px 8px rgba(0,0,0,.4),inset -1px -1px 5px rgba(34,200,100,.06)',transition:'border-color .2s'}
+const iStyle={width:'100%',maxWidth:'100%',boxSizing:'border-box',display:'block',background:'linear-gradient(145deg,var(--card),var(--card2))',border:'1px solid rgba(34,200,100,.15)',borderRadius:10,padding:'.8rem 1.1rem',color:'rgba(255,255,255,.85)',fontFamily:"'Syne',sans-serif",fontSize:'.88rem',outline:'none',boxShadow:'inset 3px 3px 8px rgba(0,0,0,.4),inset -1px -1px 5px rgba(34,200,100,.06)',transition:'border-color .2s'}
 
 const SOCIAL_LINKS=[
   {icon:MessageCircle,href:'https://wa.me/2250142507750',label:'WhatsApp',sub:'+225 01 42 50 77 50',color:'#25D366'},
-  {icon:Mail,         href:'mailto:wthomasss06@gmail.com',label:'Email',  sub:'wthomasss06@gmail.com',color:'#4285F4'},
-  {icon:Github,       href:'https://github.com/wthomasss06-stack',label:'GitHub',sub:'wthomasss06-stack',color:'#e6edf3'},
-  {icon:Linkedin,     href:'https://www.linkedin.com/in/m-bollo-aka-60a1b1340/',label:'LinkedIn',sub:'M\'Bollo Aka Elvis',color:'#0A66C2'},
+  {icon:Facebook,     href:'https://web.facebook.com/profile.php?id=61577494705852',label:'Facebook',sub:'AKATech',color:'#1877F2'},
 ]
 
 const CONTACT_STATS=[
@@ -1877,65 +2081,172 @@ function Contact() {
     const txt=encodeURIComponent(`Bonjour AKATech !\n\nNom: ${name}\nEmail: ${email}\nProjet: ${type}\n\nMessage:\n${message}`)
     window.open(`https://wa.me/2250142507750?text=${txt}`,'_blank'); setSent(true)
   }
-  return (
-    <section id="contact" ref={ref} className="section-pad" style={{padding:'7rem 5%',background:'var(--dark2)',position:'relative',overflow:'hidden'}}>
-      {/* Ambient glows */}
-      <div style={{position:'absolute',right:'-8%',top:'10%',width:520,height:520,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.07),transparent 60%)',pointerEvents:'none'}}/>
-      <div style={{position:'absolute',left:'-5%',bottom:'5%',width:380,height:380,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.05),transparent 60%)',pointerEvents:'none'}}/>
 
-      <div style={{maxWidth:1100,margin:'0 auto',position:'relative',zIndex:1}}>
-        <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} style={{textAlign:'center',marginBottom:'3.5rem'}}>
-          <div className="s-eye" style={{justifyContent:'center'}}>// Contact</div>
-          <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
+  // Style des champs — box-sizing forcé
+  const field={
+    width:'100%', maxWidth:'100%', boxSizing:'border-box', display:'block',
+    background:'linear-gradient(145deg,var(--card),var(--card2))',
+    border:'1px solid rgba(34,200,100,.15)', borderRadius:10,
+    padding:'.8rem 1rem', color:'rgba(255,255,255,.85)',
+    fontFamily:"'Syne',sans-serif", fontSize:'.88rem',
+    outline:'none', transition:'border-color .2s',
+  }
+
+  return (
+    <section id="contact" ref={ref} style={{
+      padding:'5rem 4%', background:'var(--dark2)',
+      position:'relative', overflow:'hidden',
+      boxSizing:'border-box', width:'100%',
+    }}>
+      {/* Orbs décoratifs */}
+      <div style={{position:'absolute',right:'-10%',top:'5%',width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 60%)',pointerEvents:'none'}}/>
+      <div style={{position:'absolute',left:'-8%',bottom:'5%',width:300,height:300,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.04),transparent 60%)',pointerEvents:'none'}}/>
+
+      <div style={{maxWidth:1100,margin:'0 auto',width:'100%',boxSizing:'border-box',position:'relative',zIndex:1}}>
+
+        {/* Header */}
+        <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}}
+          style={{textAlign:'center',marginBottom:'3rem'}}>
+          <SectionEye label="// Contact" ghost="CONTACT" center/>
+          <h2 style={{fontSize:'clamp(1.6rem,4vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
             Transformons votre idée <span style={{color:'#22c864'}}>en réalité</span>
           </h2>
-          <p style={{marginTop:'.8rem',fontSize:'.92rem',color:'rgba(255,255,255,.4)'}}>Décrivez votre projet — je vous réponds sous 24h.</p>
+          <p style={{marginTop:'.7rem',fontSize:'.9rem',color:'rgba(255,255,255,.4)'}}>Décrivez votre projet — je réponds sous 24h.</p>
         </motion.div>
 
-        <div className="contact-grid" style={{display:'grid',gap:'2.5rem',alignItems:'start'}}>
-          {/* ── LEFT COLUMN ── */}
-          <motion.div initial={{opacity:0,x:-24}} animate={inView?{opacity:1,x:0}:{}} transition={{duration:.6}}
-            className="contact-left-mobile"
-            style={{display:'flex',flexDirection:'column',gap:'1.1rem'}}>
+        {/* Layout : grille desktop / pile mobile */}
+        <div className="ctt-grid">
 
-            {/* Disponible badge */}
-            <div className="sku-card" style={{padding:'1.2rem 1.4rem',display:'flex',alignItems:'center',gap:'.8rem'}}>
+          {/* ── COLONNE FORMULAIRE (order:1 mobile) ── */}
+          <motion.div className="ctt-form-col"
+            initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.5}}>
+            <div style={{
+              background:'linear-gradient(145deg,var(--card2),var(--card))',
+              border:'1px solid rgba(34,200,100,.15)',
+              borderRadius:18, padding:'1.8rem',
+              boxSizing:'border-box', width:'100%', overflow:'hidden',
+              boxShadow:'var(--skeu-shadow)',
+            }}>
+              {/* Titre formulaire */}
+              <div style={{display:'flex',alignItems:'center',gap:'.7rem',marginBottom:'1.4rem'}}>
+                <div style={{width:36,height:36,borderRadius:9,background:'rgba(34,200,100,.1)',border:'1px solid rgba(34,200,100,.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <Send size={16} style={{color:'#22c864'}}/>
+                </div>
+                <h3 style={{fontSize:'1rem',fontWeight:800,color:'#fff',fontFamily:"'Syne',sans-serif",lineHeight:1.2}}>Envoyez-moi un message</h3>
+              </div>
+
+              {sent ? (
+                <motion.div initial={{opacity:0,scale:.95}} animate={{opacity:1,scale:1}}
+                  style={{textAlign:'center',padding:'2rem',background:'rgba(34,200,100,.05)',border:'1px solid rgba(34,200,100,.2)',borderRadius:14,color:'#22c864',fontWeight:700}}>
+                  <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(34,200,100,.1)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto .9rem'}}>
+                    <Check size={24} style={{color:'#22c864'}}/>
+                  </div>
+                  <div style={{fontSize:'.95rem',marginBottom:'.35rem'}}>Message envoyé !</div>
+                  <div style={{fontSize:'.78rem',fontWeight:400,color:'rgba(255,255,255,.4)'}}>Réponse dans moins de 24h.</div>
+                </motion.div>
+              ) : (
+                <form onSubmit={onSubmit} style={{display:'flex',flexDirection:'column',gap:'.9rem',width:'100%',boxSizing:'border-box'}}>
+
+                  {/* Nom + Email — 2 colonnes desktop, 1 col mobile */}
+                  <div className="ctt-row">
+                    <div className="ctt-field">
+                      <label className="ctt-label">Nom *</label>
+                      <input id="name" type="text" placeholder="Kouassi Jean"
+                        value={form.name} onChange={onChange} required style={field}
+                        onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.5)'}
+                        onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
+                    </div>
+                    <div className="ctt-field">
+                      <label className="ctt-label">Email *</label>
+                      <input id="email" type="email" placeholder="jean@email.com"
+                        value={form.email} onChange={onChange} required style={field}
+                        onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.5)'}
+                        onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
+                    </div>
+                  </div>
+
+                  {/* Type de projet */}
+                  <div className="ctt-field">
+                    <label className="ctt-label">Type de projet *</label>
+                    <select id="type" value={form.type} onChange={onChange} required
+                      style={{...field,
+                        backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2322c864' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\")",
+                        backgroundRepeat:'no-repeat', backgroundPosition:'right 1rem center',
+                        appearance:'none', colorScheme:'dark',
+                      }}
+                      onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.5)'}
+                      onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}>
+                      <option value="" style={{background:'#030806',color:'#fff'}}>Sélectionnez…</option>
+                      {['Site Vitrine','E-commerce','Application SaaS','Portfolio','API / Backend','Maintenance','Autre'].map(o=>(
+                        <option key={o} style={{background:'#030806',color:'#fff'}}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Message */}
+                  <div className="ctt-field">
+                    <label className="ctt-label">Message *</label>
+                    <textarea id="message" rows={4} placeholder="Décrivez votre projet…"
+                      value={form.message} onChange={onChange} required
+                      style={{...field,resize:'vertical',minHeight:100}}
+                      onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.5)'}
+                      onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
+                  </div>
+
+                  <button type="submit" className="btn-raised"
+                    style={{justifyContent:'center',width:'100%',padding:'1rem',borderRadius:12,fontSize:'.9rem',boxSizing:'border-box'}}>
+                    <Send size={15}/>Envoyer le message
+                  </button>
+
+                  <p style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.35rem',fontSize:'.62rem',color:'rgba(255,255,255,.2)',textAlign:'center'}}>
+                    <ShieldCheck size={10} style={{color:'rgba(34,200,100,.3)',flexShrink:0}}/>
+                    Données sécurisées, jamais partagées.
+                  </p>
+                </form>
+              )}
+            </div>
+          </motion.div>
+
+          {/* ── COLONNE INFOS (order:2 mobile) ── */}
+          <motion.div className="ctt-info-col"
+            initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.5,delay:.1}}>
+
+            {/* Badge disponible */}
+            <div className="sku-card" style={{padding:'1rem 1.2rem',display:'flex',alignItems:'center',gap:'.8rem',marginBottom:'.9rem'}}>
               <div style={{position:'relative',flexShrink:0}}>
-                <div style={{width:10,height:10,borderRadius:'50%',background:'#22c864'}}/>
+                <div style={{width:9,height:9,borderRadius:'50%',background:'#22c864'}}/>
                 <div style={{position:'absolute',inset:-3,borderRadius:'50%',border:'1.5px solid #22c864',animation:'pulse-ring 1.8s ease-out infinite'}}/>
               </div>
-              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.73rem',color:'rgba(34,200,100,.75)',letterSpacing:'.06em'}}>Disponible pour de nouveaux projets</span>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.68rem',color:'rgba(34,200,100,.75)',letterSpacing:'.05em'}}>Disponible pour de nouveaux projets</span>
             </div>
 
-            {/* Stats row */}
-            <div className="contact-stat">
+            {/* Stats */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'.6rem',marginBottom:'.9rem'}}>
               {CONTACT_STATS.map(({icon:Icon,val,label})=>(
-                <div key={label} className="sku-card" style={{padding:'1rem .8rem',textAlign:'center'}}>
-                  <Icon size={16} style={{color:'#22c864',margin:'0 auto .4rem'}}/>
-                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:'1rem',fontWeight:900,color:'#fff',lineHeight:1}}>{val}</div>
-                  <div style={{fontSize:'.6rem',color:'rgba(255,255,255,.35)',textTransform:'uppercase',letterSpacing:'.07em',marginTop:'.3rem',fontFamily:"'JetBrains Mono',monospace"}}>{label}</div>
+                <div key={label} className="sku-card" style={{padding:'.9rem .6rem',textAlign:'center'}}>
+                  <Icon size={15} style={{color:'#22c864',margin:'0 auto .3rem'}}/>
+                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:'.95rem',fontWeight:900,color:'#fff',lineHeight:1}}>{val}</div>
+                  <div style={{fontSize:'.52rem',color:'rgba(255,255,255,.35)',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',fontFamily:"'JetBrains Mono',monospace"}}>{label}</div>
                 </div>
               ))}
             </div>
 
-            {/* Social / contact links */}
-            <div className="sku-card" style={{padding:'1.4rem',display:'flex',flexDirection:'column',gap:'.8rem'}}>
-              <div style={{fontSize:'.62rem',fontWeight:700,color:'rgba(255,255,255,.35)',textTransform:'uppercase',letterSpacing:'.14em',fontFamily:"'JetBrains Mono',monospace",marginBottom:'.2rem'}}>Me retrouver sur</div>
-              <div className="contact-socials">
+            {/* Liens sociaux */}
+            <div className="sku-card" style={{padding:'1.2rem',marginBottom:'.9rem'}}>
+              <div style={{fontSize:'.58rem',fontWeight:700,color:'rgba(255,255,255,.3)',textTransform:'uppercase',letterSpacing:'.12em',fontFamily:"'JetBrains Mono',monospace",marginBottom:'.7rem'}}>Me retrouver sur</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.5rem'}}>
                 {SOCIAL_LINKS.map(({icon:Icon,href,label,sub,color})=>(
                   <a key={label} href={href} target="_blank" rel="noreferrer"
-                    style={{display:'flex',alignItems:'center',gap:'.6rem',padding:'.7rem .9rem',borderRadius:10,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)',textDecoration:'none',transition:'all .22s',cursor:'pointer'}}
-                    onMouseEnter={e=>{e.currentTarget.style.background=`${color}12`;e.currentTarget.style.borderColor=`${color}35`}}
-                    onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,.03)';e.currentTarget.style.borderColor='rgba(255,255,255,.06)'}}
-                  >
-                    <div className="social-icon-wrap" style={{width:30,height:30,borderRadius:8,background:`${color}18`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      <Icon size={14} style={{color}}/>
+                    style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.6rem .8rem',borderRadius:10,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)',textDecoration:'none',transition:'all .2s',minWidth:0}}
+                    onMouseEnter={e=>{e.currentTarget.style.background=`${color}15`;e.currentTarget.style.borderColor=`${color}40`}}
+                    onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,.03)';e.currentTarget.style.borderColor='rgba(255,255,255,.06)'}}>
+                    <div className="social-icon-wrap" style={{width:28,height:28,borderRadius:7,background:`${color}18`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <Icon size={13} style={{color}}/>
                     </div>
-                    <div style={{minWidth:0}}>
-                      <div style={{fontSize:'.72rem',fontWeight:700,color:'#fff',fontFamily:"'Syne',sans-serif",lineHeight:1.2}}>{label}</div>
-                      <div style={{fontSize:'.6rem',color:'rgba(255,255,255,.3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:100}}>{sub}</div>
+                    <div style={{minWidth:0,overflow:'hidden'}}>
+                      <div style={{fontSize:'.68rem',fontWeight:700,color:'#fff',fontFamily:"'Syne',sans-serif",lineHeight:1.2}}>{label}</div>
+                      <div style={{fontSize:'.55rem',color:'rgba(255,255,255,.3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{sub}</div>
                     </div>
-                    <ArrowRight size={11} style={{color:'rgba(255,255,255,.2)',marginLeft:'auto',flexShrink:0}}/>
                   </a>
                 ))}
               </div>
@@ -1943,86 +2254,17 @@ function Contact() {
 
             {/* WhatsApp CTA */}
             <a href="https://wa.me/2250142507750?text=Bonjour+AKATech+!" target="_blank" rel="noreferrer"
-              className="btn-raised" style={{justifyContent:'center',padding:'1rem',width:'100%',borderRadius:12,fontSize:'.88rem'}}>
-              <MessageCircle size={17}/>Démarrer sur WhatsApp
+              className="btn-raised" style={{justifyContent:'center',padding:'.9rem',width:'100%',borderRadius:12,fontSize:'.85rem',marginBottom:'.9rem',display:'flex',boxSizing:'border-box'}}>
+              <MessageCircle size={16}/>Démarrer sur WhatsApp
             </a>
 
-            {/* Location */}
-            <div style={{display:'flex',alignItems:'center',gap:'.6rem',padding:'.7rem 1rem',borderRadius:10,background:'rgba(34,200,100,.04)',border:'1px solid rgba(34,200,100,.1)'}}>
-              <MapPin size={14} style={{color:'#ea4335',flexShrink:0}}/>
-              <span style={{fontSize:'.78rem',color:'rgba(255,255,255,.45)',fontFamily:"'JetBrains Mono',monospace"}}>Abidjan, Côte d'Ivoire</span>
+            {/* Localisation */}
+            <div style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.65rem .9rem',borderRadius:10,background:'rgba(34,200,100,.04)',border:'1px solid rgba(34,200,100,.1)'}}>
+              <MapPin size={13} style={{color:'#ea4335',flexShrink:0}}/>
+              <span style={{fontSize:'.72rem',color:'rgba(255,255,255,.4)',fontFamily:"'JetBrains Mono',monospace"}}>Abidjan, Côte d'Ivoire</span>
             </div>
           </motion.div>
 
-          {/* ── RIGHT: FORM ── */}
-          <motion.div initial={{opacity:0,x:24}} animate={inView?{opacity:1,x:0}:{}} transition={{duration:.6,delay:.1}}
-            className="contact-right-mobile">
-            <div className="sku-card contact-card" style={{padding:'2rem',position:'relative',overflow:'hidden'}}>
-              {/* Inner glow */}
-              <div style={{position:'absolute',top:-60,right:-60,width:200,height:200,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 65%)',pointerEvents:'none'}}/>
-              <div style={{position:'relative',zIndex:1}}>
-                <div style={{display:'flex',alignItems:'center',gap:'.7rem',marginBottom:'.4rem'}}>
-                  <div style={{width:36,height:36,borderRadius:9,background:'rgba(34,200,100,.1)',border:'1px solid rgba(34,200,100,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <Send size={16} style={{color:'#22c864'}}/>
-                  </div>
-                  <h3 style={{fontSize:'1.1rem',fontWeight:800,color:'#fff',fontFamily:"'Syne',sans-serif"}}>Envoyez-moi un message</h3>
-                </div>
-                <p style={{fontSize:'.82rem',color:'rgba(255,255,255,.35)',marginBottom:'1.8rem',paddingLeft:'2.85rem'}}>Remplissez le formulaire — réponse sous 24h.</p>
-
-                {sent?(
-                  <motion.div initial={{opacity:0,scale:.95}} animate={{opacity:1,scale:1}}
-                    style={{textAlign:'center',padding:'2.5rem',background:'rgba(34,200,100,.05)',border:'1px solid rgba(34,200,100,.2)',borderRadius:14,color:'#22c864',fontWeight:700}}>
-                    <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(34,200,100,.1)',border:'1px solid rgba(34,200,100,.25)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 1rem'}}>
-                      <Check size={26} style={{color:'#22c864'}}/>
-                    </div>
-                    <div style={{fontSize:'1rem',marginBottom:'.4rem'}}>Message envoyé !</div>
-                    <div style={{fontSize:'.8rem',fontWeight:400,color:'rgba(255,255,255,.4)'}}>Je vous réponds dans moins de 24h.</div>
-                  </motion.div>
-                ):(
-                  <form onSubmit={onSubmit} style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
-                    <div className="form-row">
-                      <div className="field-wrap">
-                        <label style={{display:'block',fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',letterSpacing:'.1em',color:'rgba(34,200,100,.55)',marginBottom:'.38rem',textTransform:'uppercase'}}>Nom *</label>
-                        <input id="name" type="text" placeholder="Kouassi Jean" value={form.name} onChange={onChange} required style={iStyle}
-                          onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.45)'} onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
-                        <div className="field-bar"/>
-                      </div>
-                      <div className="field-wrap">
-                        <label style={{display:'block',fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',letterSpacing:'.1em',color:'rgba(34,200,100,.55)',marginBottom:'.38rem',textTransform:'uppercase'}}>Email *</label>
-                        <input id="email" type="email" placeholder="jean@email.com" value={form.email} onChange={onChange} required style={iStyle}
-                          onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.45)'} onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
-                        <div className="field-bar"/>
-                      </div>
-                    </div>
-                    <div className="field-wrap">
-                      <label style={{display:'block',fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',letterSpacing:'.1em',color:'rgba(34,200,100,.55)',marginBottom:'.38rem',textTransform:'uppercase'}}>Type de projet *</label>
-                      <select id="type" value={form.type} onChange={onChange} required
-                        style={{...iStyle,backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2322c864' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\")",backgroundRepeat:'no-repeat',backgroundPosition:'right 1rem center',appearance:'none',colorScheme:'dark'}}
-                        onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.45)'} onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}>
-                        <option value="" style={{background:'#000',color:'#fff'}}>Sélectionnez…</option>
-                        {['Site Vitrine','E-commerce','Application SaaS','Portfolio','API / Backend','Maintenance','Autre'].map(o=><option key={o} style={{background:'#000',color:'#fff'}}>{o}</option>)}
-                      </select>
-                      <div className="field-bar"/>
-                    </div>
-                    <div className="field-wrap">
-                      <label style={{display:'block',fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',letterSpacing:'.1em',color:'rgba(34,200,100,.55)',marginBottom:'.38rem',textTransform:'uppercase'}}>Message *</label>
-                      <textarea id="message" rows={5} placeholder="Décrivez votre projet…" value={form.message} onChange={onChange} required
-                        style={{...iStyle,resize:'none'}}
-                        onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.45)'} onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
-                      <div className="field-bar"/>
-                    </div>
-                    <button type="submit" className="btn-raised" style={{justifyContent:'center',marginTop:'.2rem',padding:'1rem',borderRadius:12,fontSize:'.9rem'}}>
-                      <Send size={15}/>Envoyer le message
-                    </button>
-                    <p style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.4rem',fontSize:'.67rem',color:'rgba(255,255,255,.2)',textAlign:'center'}}>
-                      <ShieldCheck size={11} style={{color:'rgba(34,200,100,.3)'}}/>
-                      Vos données sont sécurisées et ne seront jamais partagées.
-                    </p>
-                  </form>
-                )}
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>
@@ -2048,8 +2290,7 @@ const FOOTER_NAV=[
   {label:'Contact',        href:'#contact'},
 ]
 const FOOTER_CONTACT=[
-  {icon:Mail,          label:'wthomasss06@gmail.com',  href:'mailto:wthomasss06@gmail.com'},
-  {icon:Mail,          label:'aka.mbollo@uvci.edu.ci', href:'mailto:aka.mbollo@uvci.edu.ci'},
+
   {icon:MessageCircle, label:'+225 01 42 50 77 50',    href:'https://wa.me/2250142507750'},
   {icon:Phone,         label:'+225 01 70 92 76 39',    href:'tel:+2250170927639'},
   {icon:MapPin,        label:"Abidjan, Côte d'Ivoire", href:null},
@@ -2072,8 +2313,7 @@ function Footer() {
             </p>
             <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
               {[
-                {icon:Github,      href:'https://github.com/wthomasss06-stack',                   title:'GitHub'},
-                {icon:Linkedin,    href:'https://www.linkedin.com/in/m-bollo-aka-60a1b1340/',     title:'LinkedIn'},
+                
                 {icon:Facebook,    href:'https://web.facebook.com/profile.php?id=61577494705852', title:'Facebook'},
                 {icon:MessageCircle,href:'https://wa.me/2250142507750',                           title:'WhatsApp'},
                 {icon:Mail,        href:'mailto:wthomasss06@gmail.com',                           title:'Email'},
@@ -2137,19 +2377,15 @@ function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1.4rem 0',fontSize:'.7rem',color:'rgba(255,255,255,.18)',flexWrap:'wrap',gap:'.5rem'}}>
+        <div style={{display:'flex',justifyContent:'center',alignItems:'center',padding:'1.4rem 0',fontSize:'.7rem',color:'rgba(255,255,255,.18)',flexWrap:'wrap',gap:'.5rem'}}>
           <p>
             © {year}{' '}
             <a href="#accueil" style={{color:'rgba(34,200,100,.45)',transition:'color .2s'}}
                onMouseEnter={e=>e.currentTarget.style.color='#66ffaa'}
                onMouseLeave={e=>e.currentTarget.style.color='rgba(34,200,100,.45)'}>AKATech</a>
-            {' '}· M'Bollo Aka Elvis · Développeur Full-Stack · Abidjan
+            {' '}· Agence · Abidjan
           </p>
-          <p style={{display:'flex',alignItems:'center',gap:'.4rem'}}>
-            <ShieldCheck size={11} style={{color:'rgba(34,200,100,.35)'}}/>
-            Ensuring Wellness with{' '}
-            <span style={{color:'rgba(34,200,100,.4)'}}>Excellence</span>, Passion &amp; Innovation
-          </p>
+          
         </div>
       </div>
     </footer>
