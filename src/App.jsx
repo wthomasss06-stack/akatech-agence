@@ -1,7 +1,7 @@
 // ============================================================
 //  App.jsx — AKATech · Redesign Skeuomorphisme Vert/Noir
 // ============================================================
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react'
 import { motion, useInView, useScroll, useTransform, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
 import {
   TrendingUp, Users, Clock, Award,
@@ -80,15 +80,100 @@ const GLOBAL_CSS = `
     --skeu-inset: inset 3px 3px 8px #010402, inset -2px -2px 6px rgba(34,200,100,.08);
     --glow: 0 0 30px rgba(34,200,100,.25);
     --glow-lg: 0 0 60px rgba(34,200,100,.3), 0 0 120px rgba(34,200,100,.1);
+    --text-main: rgba(255,255,255,.85);
+    --text-sub: rgba(255,255,255,.5);
+    --text-muted: rgba(255,255,255,.3);
   }
 
-  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-  html { scroll-behavior:smooth; }
-  body {
-    font-family:'Syne',sans-serif;
-    background:var(--dark1); color:rgba(255,255,255,.85);
-    overflow-x:hidden; line-height:1.7;
+  /* ── LIGHT MODE : uniquement ce que le hook JS ne gère pas ── */
+  body.light-mode { background:#ffffff; color:#111111; }
+
+  /* Scrollbar */
+  body.light-mode ::-webkit-scrollbar-track { background:#f0f0f0; }
+  body.light-mode ::-webkit-scrollbar-thumb { background:#16a34a; }
+
+  /* Nav scrolled */
+  body.light-mode .nav-scrolled-bg {
+    background: rgba(255,255,255,.95) !important;
+    border-bottom-color: rgba(0,0,0,.08) !important;
   }
+
+  /* Cards */
+  body.light-mode .sku-card {
+    background: #ffffff !important;
+    box-shadow: 0 2px 14px rgba(0,0,0,.07) !important;
+    border-color: rgba(0,0,0,.08) !important;
+  }
+  body.light-mode .sku-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,.1) !important;
+    border-color: rgba(22,163,74,.25) !important;
+  }
+
+  /* Boutons */
+  body.light-mode .btn-raised { box-shadow: 0 2px 10px rgba(22,163,74,.3) !important; }
+  body.light-mode .btn-ghost {
+    background: transparent !important; color: #16a34a !important;
+    border-color: rgba(22,163,74,.4) !important; box-shadow: none !important;
+  }
+
+  /* Section eye + ghost */
+  body.light-mode .s-eye { color:#16a34a; }
+  body.light-mode .s-eye::before { background:#16a34a; }
+  body.light-mode .s-ghost-txt { -webkit-text-stroke:1.5px rgba(0,0,0,.07); }
+
+  /* gradient text */
+  body.light-mode .text-gradient-anim {
+    background: linear-gradient(135deg,#16a34a,#22c864) !important;
+    -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+  }
+
+  /* Nav icons + tooltip */
+  body.light-mode .nav-icon-btn:hover { background:rgba(0,0,0,.04); }
+  body.light-mode .nav-tooltip { background:rgba(255,255,255,.98) !important; color:#111 !important; border-color:rgba(0,0,0,.12) !important; }
+
+  /* Mobile menu */
+  body.light-mode .mobile-menu-sheet { background:#ffffff !important; border-top-color:rgba(0,0,0,.08) !important; }
+  body.light-mode .mobile-menu-handle { background:rgba(0,0,0,.15) !important; }
+
+  /* Marquee */
+  body.light-mode .marquee-item { color:rgba(0,0,0,.4) !important; }
+  body.light-mode .marquee-dot  { background:#16a34a !important; }
+
+  /* FAQ */
+  body.light-mode .faq-btn:hover { background:rgba(0,0,0,.03) !important; }
+
+  /* Inputs */
+  body.light-mode input, body.light-mode textarea, body.light-mode select {
+    background: #f5f5f5 !important; color: #111 !important; border-color: rgba(0,0,0,.15) !important;
+  }
+  body.light-mode input::placeholder, body.light-mode textarea::placeholder { color: #aaa !important; }
+  body.light-mode option { background: #fff !important; color: #111 !important; }
+  body.light-mode select { color-scheme: light !important; }
+
+  /* Footer */
+  body.light-mode footer { background: #f3f3f3 !important; border-top: 1px solid rgba(0,0,0,.07) !important; }
+
+  /* Cursor */
+  body.light-mode #micro-cursor { background:#16a34a !important; box-shadow:0 0 8px rgba(22,163,74,.5) !important; }
+
+  /* Theme toggle */
+  body.light-mode .theme-toggle { background:rgba(0,0,0,.05) !important; border-color:rgba(0,0,0,.12) !important; color:rgba(0,0,0,.6) !important; }
+  body.light-mode .theme-toggle:hover { background:rgba(0,0,0,.09) !important; color:#111 !important; }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    display:flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(34,200,100,.08); border:1px solid rgba(34,200,100,.2);
+    color:rgba(255,255,255,.6); transition:all .3s cubic-bezier(.22,1,.36,1);
+    flex-shrink:0; position:relative; overflow:hidden;
+  }
+  .theme-toggle:hover { background:rgba(34,200,100,.15); color:#66ffaa; border-color:rgba(34,200,100,.4); transform:scale(1.08); box-shadow:0 0 16px rgba(34,200,100,.2); }
+  body.light-mode .theme-toggle { background:rgba(20,160,70,.1); border-color:rgba(20,160,70,.25); color:rgba(10,40,20,.6); }
+  body.light-mode .theme-toggle:hover { background:rgba(20,160,70,.18); color:#0e7a38; }
+  @keyframes theme-spin { from{transform:rotate(0deg) scale(1)} to{transform:rotate(360deg) scale(1)} }
+  .theme-toggle.spinning svg { animation:theme-spin .4s cubic-bezier(.22,1,.36,1) forwards; }
   ::-webkit-scrollbar { width:3px; }
   ::-webkit-scrollbar-track { background:var(--dark2); }
   ::-webkit-scrollbar-thumb { background:var(--g1); border-radius:2px; }
@@ -311,11 +396,17 @@ const GLOBAL_CSS = `
   .nav-link-wrap::after { content:''; position:absolute; bottom:-2px; left:50%; right:50%; height:2px; border-radius:2px; background:linear-gradient(90deg,#22c864,#66ffaa); transition:left .25s ease,right .25s ease; }
   .nav-link-wrap:hover::after { left:0; right:0; }
 
-  /* ── NAV ICON TOOLTIP ── */
-  .nav-icon-btn { position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; padding:.45rem .7rem; cursor:pointer; border-radius:10px; transition:background .2s; }
+  /* ── NAV HAMBURGER : visible mobile, caché desktop ── */
+  .nav-hamburger { display:flex; }
+  @media(min-width:768px){ .nav-hamburger { display:none !important; } }
+
+  /* ── NAV ICON LIST : visible desktop, cachée mobile ── */
+  .nav-icon-list { display:none; }
+  @media(min-width:768px){ .nav-icon-list { display:flex !important; } }
+  .nav-icon-btn { position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; padding:.45rem .7rem; cursor:pointer; border-radius:10px; transition:background .2s, color .2s; }
   .nav-icon-btn:hover { background:rgba(34,200,100,.07); }
   .nav-icon-btn svg { transition:filter .25s, transform .25s; }
-  .nav-icon-btn:hover svg { filter:drop-shadow(0 0 6px rgba(34,200,100,.7)); transform:scale(1.18); }
+  .nav-icon-btn:hover svg { filter:drop-shadow(0 0 5px var(--g1)); transform:scale(1.18); }
   .nav-tooltip {
     position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%) translateY(-4px);
     background:rgba(6,14,9,.96); border:1px solid rgba(34,200,100,.28); border-radius:8px;
@@ -352,9 +443,14 @@ const GLOBAL_CSS = `
   .skill-tag { cursor:default; transition:background .2s,border-color .2s,color .2s,box-shadow .2s; }
   .skill-tag:hover { background:rgba(34,200,100,.18) !important; border-color:rgba(34,200,100,.45) !important; color:#66ffaa !important; box-shadow:0 0 14px rgba(34,200,100,.25); animation:tag-bounce .4s ease; }
 
-  .feat-row { transition:color .18s,padding-left .18s; cursor:default; }
-  .feat-row:hover { color:rgba(255,255,255,.88) !important; padding-left:.5rem; }
+  .feat-row { transition:color .18s,padding-left .18s; cursor:default; color:rgba(255,255,255,.6); }
+  .feat-row:hover { color:rgba(255,255,255,.9) !important; padding-left:.5rem; }
   .feat-row:hover svg { filter:drop-shadow(0 0 4px rgba(34,200,100,.7)); }
+  body.light-mode .feat-row { color:#333333 !important; }
+  body.light-mode .feat-row:hover { color:#111111 !important; }
+
+  .pricing-del { color:rgba(255,255,255,.35); }
+  body.light-mode .pricing-del { color:#888888 !important; }
 
   @keyframes star-pop { 0%{transform:scale(1)} 50%{transform:scale(1.5)} 100%{transform:scale(1)} }
   .star-i { cursor:pointer; display:inline-block; transition:filter .2s; }
@@ -362,6 +458,11 @@ const GLOBAL_CSS = `
 
   .faq-btn { transition:background .2s,padding-left .2s !important; }
   .faq-btn:hover { background:rgba(34,200,100,.04) !important; padding-left:2rem !important; }
+  .faq-question { color:#fff; }
+  .faq-answer   { color:rgba(255,255,255,.5); }
+  body.light-mode .faq-question { color:#111 !important; }
+  body.light-mode .faq-answer   { color:#555 !important; }
+  body.light-mode .faq-btn:hover { background:rgba(0,0,0,.03) !important; }
 
   .field-wrap { position:relative; }
   .field-wrap label { transition:color .2s; }
@@ -681,6 +782,92 @@ function MicroCursor() {
   return <div id="micro-cursor" ref={dot}/>
 }
 
+// ── THEME CONTEXT + COULEURS ──────────────────────────────────
+const ThemeCtx = createContext({ light: false, toggle: () => {} })
+
+// Hook qui retourne les bonnes couleurs selon le mode
+function useTheme() {
+  const { light } = useContext(ThemeCtx)
+  return {
+    light,
+    // Fonds de sections
+    bg:       light ? '#ffffff' : '#030806',
+    bgAlt:    light ? '#f5f5f5' : '#060e09',
+    bgCard:   light ? '#ffffff' : '#0b1a10',
+    // Textes
+    textMain: light ? '#111111' : 'rgba(255,255,255,.85)',
+    textSub:  light ? '#555555' : 'rgba(255,255,255,.5)',
+    textMuted:light ? '#888888' : 'rgba(255,255,255,.3)',
+    // Vert
+    green:    light ? '#16a34a' : '#22c864',
+    greenSub: light ? 'rgba(22,163,74,.55)' : 'rgba(34,200,100,.55)',
+    // Bordures
+    border:   light ? 'rgba(0,0,0,.09)' : 'rgba(34,200,100,.14)',
+    border2:  light ? 'rgba(0,0,0,.16)' : 'rgba(34,200,100,.28)',
+    // Inputs
+    inputBg:  light ? '#f5f5f5' : 'linear-gradient(145deg,#0b1a10,#0e2016)',
+    inputColor:light ? '#111' : 'rgba(255,255,255,.85)',
+    // Marquee
+    marqueeBg:light ? '#eeeeee' : '#0a1a0e',
+  }
+}
+
+function ThemeProvider({ children }) {
+  const [light, setLight] = useState(() => {
+    try { return localStorage.getItem('aka-theme') === 'light' } catch { return false }
+  })
+  const toggle = () => {
+    setLight(v => {
+      const next = !v
+      try { localStorage.setItem('aka-theme', next ? 'light' : 'dark') } catch {}
+      document.body.classList.toggle('light-mode', next)
+      return next
+    })
+  }
+  useEffect(() => { document.body.classList.toggle('light-mode', light) }, [])
+  return <ThemeCtx.Provider value={{ light, toggle }}>{children}</ThemeCtx.Provider>
+}
+
+// ── THEME TOGGLE BUTTON ───────────────────────────────────────
+function ThemeToggle() {
+  const { light, toggle } = useContext(ThemeCtx)
+  const [spin, setSpin] = useState(false)
+  const handleClick = () => {
+    setSpin(true)
+    toggle()
+    setTimeout(() => setSpin(false), 420)
+  }
+  return (
+    <button
+      className={`theme-toggle${spin ? ' spinning' : ''}`}
+      onClick={handleClick}
+      title={light ? 'Passer en mode sombre' : 'Passer en mode clair'}
+      aria-label="Changer le thème"
+    >
+      {light ? (
+        /* Moon icon */
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
+        </svg>
+      ) : (
+        /* Sun icon */
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      )}
+    </button>
+  )
+}
+
+
 function GlobalStyles() {
   useEffect(() => {
     const id = 'akatech-styles'
@@ -771,7 +958,7 @@ function Loader({ onDone }) {
     <AnimatePresence>
       {visible&&(
         <motion.div exit={{opacity:0}} transition={{duration:.7}}
-          style={{position:'fixed',inset:0,zIndex:9999,background:'#030806',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'1.5rem',padding:'1.5rem',boxSizing:'border-box'}}>
+          style={{position:'fixed',inset:0,zIndex:9999,background:'var(--dark1,#030806)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'1.5rem',padding:'1.5rem',boxSizing:'border-box'}}>
           {/* Logo — taille responsive via CSS */}
           <motion.div initial={{opacity:0,scale:.86}} animate={{opacity:1,scale:1}} transition={{duration:.8,ease:[.22,1,.36,1]}}
             style={{transform:'scale(var(--loader-scale,1))',transformOrigin:'center'}}>
@@ -814,39 +1001,57 @@ function Navbar() {
   const [scrolled,setScrolled]=useState(false)
   const [active,setActive]=useState('')
   const [open,setOpen]=useState(false)
+  const T = useTheme()
   useEffect(()=>{
     const fn=()=>{ const y=window.scrollY; setScrolled(y>60); const ss=document.querySelectorAll('section[id],div[id]'); let c=''; ss.forEach(s=>{if(y>=s.offsetTop-130)c=s.id}); setActive(c) }
     window.addEventListener('scroll',fn,{passive:true}); fn(); return()=>window.removeEventListener('scroll',fn)
   },[])
+
+  // Couleurs adaptatives navbar
+  const navBg = scrolled ? (T.light ? 'rgba(255,255,255,.95)' : 'rgba(3,8,6,.92)') : 'transparent'
+  const navBorder = scrolled ? (T.light ? 'rgba(0,0,0,.08)' : 'rgba(34,200,100,.1)') : 'none'
+  const iconColor = T.light ? '#16a34a' : '#22c864'
+  const iconActive = T.light ? '#16a34a' : '#22c864'
+  // Menu mobile
+  const sheetBg = T.light ? '#ffffff' : 'linear-gradient(180deg,#0d2216 0%,#030806 100%)'
+  const sheetBorder = T.light ? 'rgba(0,0,0,.08)' : 'rgba(34,200,100,.25)'
+  const linkColor = T.light ? 'rgba(0,0,0,.7)' : 'rgba(255,255,255,.75)'
+  const linkActive = T.light ? '#16a34a' : '#22c864'
+  const linkHoverBg = T.light ? 'rgba(0,0,0,.04)' : 'rgba(34,200,100,.06)'
+  const linkHoverColor = T.light ? '#16a34a' : '#66ffaa'
+  const handleColor = T.light ? 'rgba(0,0,0,.15)' : 'rgba(34,200,100,.35)'
+  const locColor = T.light ? 'rgba(0,0,0,.3)' : 'rgba(255,255,255,.2)'
+  const borderRow = T.light ? 'rgba(0,0,0,.06)' : 'rgba(34,200,100,.07)'
+  const chevronColor = T.light ? 'rgba(0,0,0,.25)' : 'rgba(34,200,100,.35)'
+
   return (
     <>
       <motion.nav
         className="fixed left-0 right-0 z-[900]"
         style={{
           top:0, height:64,
-          display:'flex',
-          alignItems:'center',
+          display:'flex', alignItems:'center',
           padding: scrolled ? '0 1.2rem 0 0.5rem' : '0 1.5rem 0 0.5rem',
-          background:scrolled?'rgba(3,8,6,.92)':'transparent',
-          backdropFilter:scrolled?'blur(20px)':'none',
-          borderBottom:scrolled?'1px solid rgba(34,200,100,.1)':'none',
+          background: navBg,
+          backdropFilter: scrolled ? 'blur(20px)' : 'none',
+          WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
+          borderBottom: scrolled ? `1px solid ${navBorder}` : 'none',
           transition:'all .4s cubic-bezier(.22,1,.36,1)',
         }}
       >
-        {/* Logo — always left */}
+        {/* Logo */}
         <a href="#accueil" style={{flexShrink:0,zIndex:2}}>
           <Logo size={28} animate={false} showTag={false}/>
         </a>
 
-        {/* Desktop nav icons
-            — Before scroll: flex-1, justify-content:space-evenly → icons fill remaining space
-            — After scroll:  auto width, justify-content:flex-end → compact at right */}
+        {/* Desktop icons
+            — Avant scroll : s'étalent sur tout l'espace (flex:1, space-evenly)
+            — Après scroll  : se compactent à droite (flex:0, flex-end, marginLeft:auto) */}
         <ul
-          className="hidden md:flex items-center list-none"
+          className="nav-icon-list items-center list-none"
           style={{
             flex: scrolled ? '0 0 auto' : '1',
             justifyContent: scrolled ? 'flex-end' : 'space-evenly',
-            gap: scrolled ? '0' : '0',
             marginLeft: scrolled ? 'auto' : '0',
             transition:'all .4s cubic-bezier(.22,1,.36,1)',
             overflow:'hidden',
@@ -857,11 +1062,11 @@ function Navbar() {
             return (
               <li key={href} style={{ flex: scrolled ? '0 0 auto' : '1', display:'flex', justifyContent:'center', transition:'flex .4s cubic-bezier(.22,1,.36,1)' }}>
                 <a href={href} className="nav-icon-btn"
-                  style={{ color: isActive ? '#22c864' : 'rgba(255,255,255,.45)', textDecoration:'none', position:'relative', width: scrolled ? 'auto' : '100%', justifyContent:'center' }}
-                  onMouseEnter={e=>{ e.currentTarget.style.color='#66ffaa' }}
-                  onMouseLeave={e=>{ e.currentTarget.style.color=isActive?'#22c864':'rgba(255,255,255,.45)' }}
+                  style={{ color: isActive ? iconActive : iconColor, textDecoration:'none', position:'relative', width: scrolled ? 'auto' : '100%', justifyContent:'center' }}
+                  onMouseEnter={e=>{ e.currentTarget.style.color=iconActive }}
+                  onMouseLeave={e=>{ e.currentTarget.style.color=isActive?iconActive:iconColor }}
                 >
-                  {isActive && <span style={{position:'absolute',bottom:4,left:'50%',transform:'translateX(-50%)',width:4,height:4,borderRadius:'50%',background:'#22c864',boxShadow:'0 0 8px rgba(34,200,100,.8)'}}/>}
+                  {isActive && <span style={{position:'absolute',bottom:4,left:'50%',transform:'translateX(-50%)',width:4,height:4,borderRadius:'50%',background:iconActive,boxShadow:`0 0 8px ${iconActive}`}}/>}
                   {NAV_ICONS[iconKey]}
                   <span className="nav-tooltip">{label}</span>
                 </a>
@@ -870,47 +1075,57 @@ function Navbar() {
           })}
         </ul>
 
-        {/* Mobile hamburger */}
-        <button className="md:hidden" onClick={()=>setOpen(v=>!v)}
-          style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'#66ffaa',padding:'.4rem',borderRadius:8,transition:'background .2s'}}
-          onMouseEnter={e=>e.currentTarget.style.background='rgba(34,200,100,.08)'}
-          onMouseLeave={e=>e.currentTarget.style.background='none'}>
-          {open?<X size={22}/>:<Menu size={22}/>}
-        </button>
+        {/* Toggle + hamburger */}
+        <div style={{display:'flex',alignItems:'center',gap:'.4rem',marginLeft: scrolled ? '.5rem' : 'auto',flexShrink:0}}>
+          <ThemeToggle/>
+          <button
+            className="nav-hamburger"
+            onClick={()=>setOpen(v=>!v)}
+            style={{background:'none',border:'none',cursor:'pointer',color:iconActive,padding:'.4rem',borderRadius:8,transition:'background .2s'}}
+            onMouseEnter={e=>e.currentTarget.style.background= T.light?'rgba(0,0,0,.05)':'rgba(34,200,100,.08)'}
+            onMouseLeave={e=>e.currentTarget.style.background='none'}>
+            {open?<X size={22}/>:<Menu size={22}/>}
+          </button>
+        </div>
       </motion.nav>
 
       {/* Bottom-sheet mobile menu */}
       <AnimatePresence>
         {open&&(
           <>
-            {/* Overlay flouté */}
             <motion.div
               className="mobile-menu-overlay"
               initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
               transition={{duration:.25}}
               onClick={()=>setOpen(false)}
             />
-            {/* Sheet qui monte du bas */}
             <motion.div
-              className="mobile-menu-sheet"
               initial={{y:'100%'}} animate={{y:0}} exit={{y:'100%'}}
               transition={{type:'spring',stiffness:320,damping:32}}
+              style={{
+                position:'fixed', bottom:0, left:0, right:0, zIndex:899,
+                background: sheetBg,
+                borderTop:`1px solid ${sheetBorder}`,
+                borderRadius:'24px 24px 0 0',
+                padding:`0 1.4rem calc(env(safe-area-inset-bottom,0px) + 1.5rem)`,
+                boxShadow: T.light ? '0 -8px 32px rgba(0,0,0,.1)' : '0 -12px 48px rgba(0,0,0,.8)',
+              }}
             >
-              {/* Handle bar */}
-              <div className="mobile-menu-handle" onClick={()=>setOpen(false)}/>
+              {/* Handle */}
+              <div style={{width:44,height:4,borderRadius:2,background:handleColor,margin:'14px auto 18px'}} onClick={()=>setOpen(false)}/>
 
               {/* Links */}
               <div style={{display:'flex',flexDirection:'column',gap:'.15rem',marginBottom:'1.2rem'}}>
                 {NAV.map(({href,label,iconKey},i)=>(
                   <motion.a key={href} href={href} onClick={()=>setOpen(false)}
                     initial={{opacity:0,x:-16}} animate={{opacity:1,x:0}} transition={{delay:i*.05}}
-                    style={{display:'flex',alignItems:'center',gap:'.85rem',padding:'.9rem 1rem',fontSize:'1rem',fontWeight:600,color:active===href.slice(1)?'#22c864':'rgba(255,255,255,.75)',borderBottom:'1px solid rgba(34,200,100,.07)',fontFamily:"'Syne',sans-serif",borderRadius:10,transition:'background .2s',textDecoration:'none'}}
-                    onMouseEnter={e=>{e.currentTarget.style.background='rgba(34,200,100,.06)';e.currentTarget.style.color='#66ffaa'}}
-                    onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color=active===href.slice(1)?'#22c864':'rgba(255,255,255,.75)'}}
+                    style={{display:'flex',alignItems:'center',gap:'.85rem',padding:'.9rem 1rem',fontSize:'1rem',fontWeight:600,color:active===href.slice(1)?linkActive:linkColor,borderBottom:`1px solid ${borderRow}`,fontFamily:"'Syne',sans-serif",borderRadius:10,transition:'background .2s',textDecoration:'none'}}
+                    onMouseEnter={e=>{e.currentTarget.style.background=linkHoverBg;e.currentTarget.style.color=linkHoverColor}}
+                    onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color=active===href.slice(1)?linkActive:linkColor}}
                   >
-                    <span style={{color:active===href.slice(1)?'#22c864':'rgba(34,200,100,.55)',flexShrink:0,display:'flex',alignItems:'center'}}>{NAV_ICONS[iconKey]}</span>
-                    <span style={{flex:1}}>{label}</span>
-                    <ChevronRight size={14} style={{color:'rgba(34,200,100,.35)',flexShrink:0}}/>
+                    <span style={{color:active===href.slice(1)?linkActive:iconActive,flexShrink:0,display:'flex',alignItems:'center',opacity:.7}}>{NAV_ICONS[iconKey]}</span>
+                    <span style={{flex:1,color:'inherit'}}>{label}</span>
+                    <ChevronRight size={14} style={{color:chevronColor,flexShrink:0}}/>
                   </motion.a>
                 ))}
               </div>
@@ -924,8 +1139,8 @@ function Navbar() {
 
               {/* Localisation */}
               <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:.4}}
-                style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.5rem',marginTop:'1rem',fontSize:'.7rem',color:'rgba(255,255,255,.2)',fontFamily:"'JetBrains Mono',monospace"}}>
-                <MapPin size={11} style={{color:'rgba(34,200,100,.3)'}}/>
+                style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.5rem',marginTop:'1rem',fontSize:'.7rem',color:locColor,fontFamily:"'JetBrains Mono',monospace"}}>
+                <MapPin size={11} style={{color:T.light?'rgba(0,0,0,.3)':'rgba(34,200,100,.3)'}}/>
                 Abidjan, Côte d'Ivoire
               </motion.div>
             </motion.div>
@@ -1023,23 +1238,55 @@ function Hero() {
       <div style={{position:'relative',zIndex:10,maxWidth:760,padding:'0 1.5rem'}}>
         <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.1}} style={{display:'inline-flex',alignItems:'center',gap:'.5rem',padding:'.35rem 1rem',background:'rgba(34,200,100,.07)',border:'1px solid rgba(34,200,100,.2)',borderRadius:100,fontSize:'.72rem',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'.1em',color:'#66ffaa',textTransform:'uppercase',marginBottom:'2rem'}}>
           <span style={{width:6,height:6,borderRadius:'50%',background:'#22c864',animation:'pulse-ring 1.8s ease-out infinite'}}/>
-          AKATech · Solutions Web Sur Mesure
+          🔥 +10 projets livrés · Abidjan, Côte d'Ivoire
         </motion.div>
 
         <motion.h1 initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{delay:.2}} style={{fontSize:'clamp(2.8rem,6vw,5rem)',fontWeight:800,letterSpacing:'-.04em',lineHeight:1.05,color:'#fff',marginBottom:'1.5rem',fontFamily:"'Syne',sans-serif"}}>
-          Votre business mérite<br/>
+          Votre activité mérite<br/>
           <span style={{background:'linear-gradient(135deg,#66ffaa,#22c864,#17a354)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
-            un site web qui vend
+            d'attirer plus de clients
           </span>
         </motion.h1>
 
-        <motion.p initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.35}} style={{fontSize:'1.05rem',color:'rgba(255,255,255,.55)',lineHeight:1.8,marginBottom:'2.5rem',maxWidth:520,margin:'0 auto 2.5rem'}}>
-          AKATech crée des solutions web modernes, rapides et rentables — de l'idée au déploiement, clé en main.
-        </motion.p>
+        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.35}} style={{maxWidth:540,margin:'0 auto 2.5rem',display:'flex',flexDirection:'column',gap:'.75rem'}}>
+          {/* Ligne problème */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.55rem',flexWrap:'wrap'}}>
+            {['Pas de site web ?','Peu de visibilité en ligne ?'].map((txt,i)=>(
+              <span key={i} style={{
+                display:'inline-flex',alignItems:'center',gap:'.35rem',
+                padding:'.3rem .85rem',
+                background:'rgba(255,80,80,.07)',
+                border:'1px solid rgba(255,100,100,.18)',
+                borderRadius:100,
+                fontSize:'.8rem',
+                color:'rgba(255,170,170,.75)',
+                fontFamily:"'JetBrains Mono',monospace",
+                letterSpacing:'.03em',
+              }}>
+                <span style={{fontSize:'.7rem'}}>✗</span>{txt}
+              </span>
+            ))}
+          </div>
+          {/* Séparateur flèche */}
+          <div style={{textAlign:'center',color:'rgba(34,200,100,.4)',fontSize:'.85rem',lineHeight:1}}>↓</div>
+          {/* Ligne solution */}
+          <p style={{
+            fontSize:'1rem',
+            color:'rgba(255,255,255,.65)',
+            lineHeight:1.8,
+            textAlign:'center',
+            margin:0,
+          }}>
+            AKATech transforme votre activité en{' '}
+            <span style={{color:'#66ffaa',fontWeight:700}}>machine à attirer des clients</span>
+            {' '}— sites vitrines, e-commerce et applications SaaS{' '}
+            <span style={{color:'rgba(255,255,255,.45)'}}>sur mesure.</span>
+          </p>
+        </motion.div>
 
         <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.45}} style={{display:'flex',gap:'1rem',justifyContent:'center',flexWrap:'wrap',marginBottom:'4rem'}} className="hero-cta-row">
-          <a href="#services" className="btn-raised">Nos Services <ArrowRight size={16}/></a>
-          <a href="#projets" className="btn-ghost">Voir nos projets <ChevronRight size={16}/></a>
+          <a href="https://wa.me/2250142507750?text=Bonjour+AKATech+!" target="_blank" rel="noreferrer" className="btn-raised"><MessageCircle size={16}/>Discuter sur WhatsApp</a>
+          <a href="#tarifs" className="btn-ghost">Voir les offres <ChevronRight size={16}/></a>
         </motion.div>
 
         {/* Trust bar */}
@@ -1047,10 +1294,10 @@ function Hero() {
           className="sku-card hero-trust-bar"
           style={{display:'inline-flex',gap:'2.5rem',padding:'1.2rem 2.5rem',flexWrap:'wrap',justifyContent:'center',alignItems:'center'}}
         >
-          {[{val:'10+',label:'Projets livrés'},{val:'24h',label:'Réponse rapide'},{val:'100%',label:'Sur mesure'},{val:'5★',label:'Satisfaction'}].map(({val,label},i)=>(
+          {[{val:'10+',label:'Projets livrés'},{val:'< 24h',label:'Réponse garantie'},{val:'100%',label:'Sur mesure'},{val:'5★',label:'Clients satisfaits'}].map(({val,label},i)=>(
             <div key={i} style={{textAlign:'center',minWidth:0}}>
               <div className="trust-val" style={{fontFamily:"'Orbitron',sans-serif",fontSize:'1.5rem',fontWeight:900,color:'#22c864',lineHeight:1}}>{val}</div>
-              <div className="trust-lbl" style={{fontSize:'.65rem',color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',fontFamily:"'JetBrains Mono',monospace",whiteSpace:'nowrap'}}>{label}</div>
+              <div className="trust-lbl" style={{fontSize:'.65rem',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',fontFamily:"'JetBrains Mono',monospace",whiteSpace:'nowrap'}}>{label}</div>
             </div>
           ))}
         </motion.div>
@@ -1065,15 +1312,16 @@ function Hero() {
 // ── MARQUEE ──────────────────────────────────────────────────
 const M_ITEMS=['Site Vitrine','E-commerce','Application SaaS','Portfolio','API RESTful','Maintenance','SEO','React','Django','Node.js','MySQL','Tailwind CSS','Python','Vercel']
 function MarqueeStrip() {
+  const T = useTheme()
   return (
-    <div style={{background:'var(--dark3)',borderTop:'1px solid rgba(34,200,100,.1)',borderBottom:'1px solid rgba(34,200,100,.1)',overflow:'hidden',padding:'.85rem 0'}}>
+    <div style={{background:T.marqueeBg,borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,overflow:'hidden',padding:'.85rem 0'}}>
       <div className="flex no-select" style={{animation:'marquee 30s linear infinite',width:'max-content'}}
         onMouseEnter={e=>e.currentTarget.style.animationPlayState='paused'}
         onMouseLeave={e=>e.currentTarget.style.animationPlayState='running'}
       >
         {[...M_ITEMS,...M_ITEMS].map((t,i)=>(
-          <span key={i} className="marquee-item" style={{display:'inline-flex',alignItems:'center',gap:'.6rem',padding:'0 1.2rem',fontFamily:"'JetBrains Mono',monospace",fontSize:'.7rem',fontWeight:500,color:'rgba(255,255,255,.5)',letterSpacing:'.1em',textTransform:'uppercase',whiteSpace:'nowrap'}}>
-            <span className="marquee-dot" style={{width:4,height:4,borderRadius:'50%',background:'#22c864',flexShrink:0}}/>
+          <span key={i} className="marquee-item" style={{display:'inline-flex',alignItems:'center',gap:'.6rem',padding:'0 1.2rem',fontFamily:"'JetBrains Mono',monospace",fontSize:'.7rem',fontWeight:500,letterSpacing:'.1em',textTransform:'uppercase',whiteSpace:'nowrap'}}>
+            <span className="marquee-dot" style={{width:4,height:4,borderRadius:'50%',background:T.green,flexShrink:0}}/>
             {t}
           </span>
         ))}
@@ -1090,12 +1338,12 @@ const ABOUT_PHOTOS = [
   { src: '/images/about-4.jpg', label: 'Design & Dev' },
 ]
 const ABOUT_STATS = [
-  { val: '10+',  label: 'Projets livrés',   icon: Rocket },
-  { val: '100%', label: 'Sur mesure',        icon: Palette },
-  { val: '24h',  label: 'Réponse rapide',    icon: Zap },
-  { val: '5 ★',  label: 'Satisfaction',      icon: Star },
-  { val: '3+',   label: 'Années d\'expérience', icon: Award },
-  { val: 'CI',   label: 'Basé à Abidjan',    icon: MapPin },
+  { val: '10+',  label: 'Projets livrés',      icon: Rocket },
+  { val: '100%', label: 'Sur mesure',           icon: Palette },
+  { val: '24h',  label: 'Réponse garantie',     icon: Zap },
+  { val: '5 ★',  label: 'Note clients',         icon: Star },
+  { val: '3+',   label: 'Ans d\'expérience',    icon: Award },
+  { val: 'CI',   label: 'Basé à Abidjan',       icon: MapPin },
 ]
 
 function AnimatedCounter({ target, duration = 1800 }) {
@@ -1126,56 +1374,45 @@ function AnimatedCounter({ target, duration = 1800 }) {
 function About() {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-80px' })
-
-  // Parallax scroll for photo grid
+  const T = useTheme()
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
   const photoY = useTransform(scrollYProgress, [0, 1], [40, -40])
 
   return (
-    <section id="apropos" ref={ref} style={{ padding: '7rem 5%', background: 'linear-gradient(160deg, var(--dark3) 0%, var(--dark2) 60%, #071209 100%)', position: 'relative', overflow: 'hidden' }}>
-      {/* Ambient orbs */}
-      <div style={{ position:'absolute', top:'-15%', right:'-10%', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.07),transparent 65%)', pointerEvents:'none' }}/>
-      <div style={{ position:'absolute', bottom:'-10%', left:'-5%', width:380, height:380, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.05),transparent 65%)', pointerEvents:'none' }}/>
-      {/* Grid bg */}
-      <div className="grid-bg" style={{ position:'absolute', inset:0, opacity:.25 }}/>
+    <section id="apropos" ref={ref} style={{ padding: '7rem 5%', background: T.bgAlt, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position:'absolute', top:'-15%', right:'-10%', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.07),transparent 65%)', pointerEvents:'none', opacity: T.light?0:1 }}/>
+      <div style={{ position:'absolute', bottom:'-10%', left:'-5%', width:380, height:380, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.05),transparent 65%)', pointerEvents:'none', opacity: T.light?0:1 }}/>
+      <div className="grid-bg" style={{ position:'absolute', inset:0, opacity: T.light?.15:.25 }}/>
 
       <div style={{ maxWidth:1200, margin:'0 auto', position:'relative', zIndex:1 }}>
         <div className="about-grid">
-
-          {/* ── LEFT: Photo grid ── */}
           <motion.div style={{ y: photoY }}>
             <div className="about-photos" style={{ position:'relative' }}>
-              {/* Big top-left photo */}
               <motion.div whileHover={{ scale:1.03 }} transition={{ duration:.5 }}
-                style={{ gridRow:'1 / 3', gridColumn:'1', borderRadius:16, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.15)', boxShadow:'8px 8px 32px rgba(0,0,0,.6)' }}>
+                style={{ gridRow:'1 / 3', gridColumn:'1', borderRadius:16, overflow:'hidden', position:'relative', border:`1px solid ${T.border}`, boxShadow:'8px 8px 32px rgba(0,0,0,.3)' }}>
                 <LazyImg src={ABOUT_PHOTOS[0].src} alt={ABOUT_PHOTOS[0].label}
                   style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
                   placeholder={<div className="img-ph" style={{ height:'100%' }}><Users size={32} style={{ opacity:.3 }}/><span>Équipe</span></div>}
                 />
-                <div style={{ position:'absolute', bottom:'.8rem', left:'.8rem', padding:'.3rem .85rem', borderRadius:100, background:'rgba(34,200,100,.18)', backdropFilter:'blur(8px)', border:'1px solid rgba(34,200,100,.3)', fontFamily:"'JetBrains Mono',monospace", fontSize:'.58rem', color:'#66ffaa', letterSpacing:'.1em' }}>
+                <div style={{ position:'absolute', bottom:'.8rem', left:'.8rem', padding:'.3rem .85rem', borderRadius:100, background:'rgba(34,200,100,.18)', backdropFilter:'blur(8px)', border:'1px solid rgba(34,200,100,.3)', fontFamily:"'JetBrains Mono',monospace", fontSize:'.58rem', color:'#22c864', letterSpacing:'.1em' }}>
                   // AKATech Team
                 </div>
               </motion.div>
-
-              {/* Top-right photo */}
               <motion.div whileHover={{ scale:1.04 }} transition={{ duration:.5 }}
-                style={{ borderRadius:14, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.12)', boxShadow:'6px 6px 24px rgba(0,0,0,.5)' }}>
+                style={{ borderRadius:14, overflow:'hidden', position:'relative', border:`1px solid ${T.border}`, boxShadow:'6px 6px 24px rgba(0,0,0,.2)' }}>
                 <LazyImg src={ABOUT_PHOTOS[1].src} alt={ABOUT_PHOTOS[1].label}
                   style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
                   placeholder={<div className="img-ph" style={{ height:'100%' }}><Monitor size={28} style={{ opacity:.3 }}/><span>Bureau</span></div>}
                 />
               </motion.div>
-
-              {/* Bottom-right photo */}
               <motion.div whileHover={{ scale:1.04 }} transition={{ duration:.5 }}
-                style={{ borderRadius:14, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.12)', boxShadow:'6px 6px 24px rgba(0,0,0,.5)' }}>
+                style={{ borderRadius:14, overflow:'hidden', position:'relative', border:`1px solid ${T.border}`, boxShadow:'6px 6px 24px rgba(0,0,0,.2)' }}>
                 <LazyImg src={ABOUT_PHOTOS[2].src} alt={ABOUT_PHOTOS[2].label}
                   style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
                   placeholder={<div className="img-ph" style={{ height:'100%' }}><Code size={28} style={{ opacity:.3 }}/><span>Dev</span></div>}
                 />
-                <motion.div
-                  initial={{ opacity:0, scale:.6 }} animate={inView ? { opacity:1, scale:1 } : {}} transition={{ delay:.8, type:'spring', stiffness:280, damping:20 }}
-                  style={{ position:'absolute', top:'-18px', right:'-10px', width:70, height:70, borderRadius:'50%', background:'linear-gradient(145deg,#27d570,#1aa355)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', boxShadow:'4px 4px 16px rgba(0,0,0,.6), 0 0 24px rgba(34,200,100,.3)', border:'2px solid rgba(255,255,255,.15)' }}>
+                <motion.div initial={{ opacity:0, scale:.6 }} animate={inView ? { opacity:1, scale:1 } : {}} transition={{ delay:.8, type:'spring', stiffness:280, damping:20 }}
+                  style={{ position:'absolute', top:'-18px', right:'-10px', width:70, height:70, borderRadius:'50%', background:'linear-gradient(145deg,#27d570,#1aa355)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', boxShadow:'4px 4px 16px rgba(0,0,0,.4)', border:'2px solid rgba(255,255,255,.15)' }}>
                   <span style={{ fontFamily:"'Orbitron',sans-serif", fontSize:'.9rem', fontWeight:900, color:'#fff', lineHeight:1 }}>3+</span>
                   <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.42rem', color:'rgba(255,255,255,.8)', letterSpacing:'.06em', textTransform:'uppercase', marginTop:2 }}>Années</span>
                 </motion.div>
@@ -1183,94 +1420,68 @@ function About() {
             </div>
           </motion.div>
 
-          {/* ── RIGHT: Content ── */}
           <motion.div initial={{ opacity:0, x:30 }} animate={inView ? { opacity:1, x:0 } : {}} transition={{ duration:.7, ease:[.22,1,.36,1] }}>
-            <SectionEye label="// À propos" ghost="ABOUT"/>
-            <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:'#fff', letterSpacing:'-.03em', lineHeight:1.15, marginBottom:'1.4rem' }}>
-              Transformer vos idées<br/>
-              <span className="text-gradient-anim">en réalité digitale</span>
+            <SectionEye label="// Qui sommes-nous" ghost="ABOUT"/>
+            <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:T.textMain, letterSpacing:'-.03em', lineHeight:1.15, marginBottom:'1.4rem' }}>
+              Votre croissance digitale,<br/>
+              <span className="text-gradient-anim">c'est notre mission</span>
             </h2>
-
-            {/* Animated reveal line */}
-            <motion.div
-              initial={{ scaleX:0, opacity:0 }} animate={inView ? { scaleX:1, opacity:1 } : {}} transition={{ duration:.8, delay:.3, ease:[.22,1,.36,1] }}
-              style={{ height:2, background:'linear-gradient(90deg,#22c864,rgba(34,200,100,.1))', borderRadius:2, marginBottom:'1.5rem', transformOrigin:'left' }}
-            />
-
-            <p style={{ fontSize:'.92rem', color:'rgba(255,255,255,.5)', lineHeight:1.85, marginBottom:'.9rem' }}>
-              <strong style={{ color:'rgba(255,255,255,.85)' }}>AKATech</strong> accompagne les entrepreneurs, PME et créateurs en Afrique dans la création de solutions web modernes, rapides et rentables.
+            <motion.div initial={{ scaleX:0, opacity:0 }} animate={inView ? { scaleX:1, opacity:1 } : {}} transition={{ duration:.8, delay:.3 }}
+              style={{ height:2, background:'linear-gradient(90deg,#22c864,rgba(34,200,100,.1))', borderRadius:2, marginBottom:'1.5rem', transformOrigin:'left' }}/>
+            <p style={{ fontSize:'.92rem', color:T.textSub, lineHeight:1.85, marginBottom:'.9rem' }}>
+              <strong style={{ color:T.textMain }}>AKATech</strong> accompagne les entrepreneurs et PME en Côte d'Ivoire qui veulent une présence digitale sérieuse — pour gagner en crédibilité, attirer des clients et automatiser leur activité.
             </p>
-            <p style={{ fontSize:'.92rem', color:'rgba(255,255,255,.45)', lineHeight:1.85, marginBottom:'.7rem' }}>
-              Derrière AKATech, je suis <strong style={{ color:'rgba(255,255,255,.75)' }}>M'Bollo Aka Elvis</strong>, développeur full-stack basé à Abidjan, spécialisé dans la conception d'applications web sur mesure.
+            <p style={{ fontSize:'.92rem', color:T.textSub, lineHeight:1.85, marginBottom:'.7rem' }}>
+              Je suis <strong style={{ color:T.textMain }}>M'Bollo Aka Elvis</strong>, développeur full-stack basé à Abidjan. Avec 3 ans d'expérience et +10 projets livrés, je conçois des solutions web qui répondent aux réalités du marché africain.
             </p>
-            <p style={{ fontSize:'.92rem', color:'rgba(255,255,255,.45)', lineHeight:1.85, marginBottom:'1.4rem' }}>
-              Mon objectif est simple : comprendre votre activité, vos besoins et vos défis — afin de créer une solution digitale réellement utile pour votre business. Chaque projet est unique. Pas de template, pas de copier-coller.
+            <p style={{ fontSize:'.92rem', color:T.textSub, lineHeight:1.85, marginBottom:'1.4rem' }}>
+              Ma méthode : comprendre votre activité d'abord, développer ensuite. Chaque solution est pensée pour votre contexte — pas copié-collé d'un template générique.
             </p>
-            {/* Value prop highlight */}
-            <div style={{ padding:'.9rem 1.2rem', borderRadius:12, background:'rgba(34,200,100,.06)', border:'1px solid rgba(34,200,100,.18)', marginBottom:'2rem', display:'flex', alignItems:'flex-start', gap:'.7rem' }}>
+            <div style={{ padding:'.9rem 1.2rem', borderRadius:12, background: T.light?'rgba(22,163,74,.05)':'rgba(34,200,100,.06)', border:`1px solid ${T.border}`, marginBottom:'2rem', display:'flex', alignItems:'flex-start', gap:'.7rem' }}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink:0, marginTop:'.15rem' }}>
                 <circle cx="10" cy="10" r="9" fill="rgba(34,200,100,.15)" stroke="rgba(34,200,100,.4)" strokeWidth="1.2"/>
-                <path d="M7 10h7M11 7l3 3-3 3" stroke="#22c864" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ animation:'proc-draw 1s ease forwards, proc-float 2s 1s ease-in-out infinite' }}
-                  strokeDasharray="20" strokeDashoffset="20"/>
+                <path d="M7 10h7M11 7l3 3-3 3" stroke={T.green} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="20" strokeDashoffset="20" style={{ animation:'proc-draw 1s ease forwards, proc-float 2s 1s ease-in-out infinite' }}/>
               </svg>
-              <p style={{ fontSize:'.88rem', color:'rgba(255,255,255,.7)', lineHeight:1.75, margin:0 }}>
-                Des solutions conçues pour <strong style={{ color:'#66ffaa' }}>attirer des clients</strong>, <strong style={{ color:'#66ffaa' }}>automatiser votre activité</strong> et <strong style={{ color:'#66ffaa' }}>générer des revenus</strong>.
+              <p style={{ fontSize:'.88rem', color:T.textSub, lineHeight:1.75, margin:0 }}>
+                Une priorité unique : que votre solution digitale <strong style={{ color:T.green }}>attire des clients</strong>, <strong style={{ color:T.green }}>automatise vos tâches répétitives</strong> et <strong style={{ color:T.green }}>génère des revenus pour votre activité</strong>.
               </p>
             </div>
-
-            {/* Skills tags */}
             <div style={{ display:'flex', flexWrap:'wrap', gap:'.45rem', marginBottom:'2rem' }}>
               {['React','Django','Python','Node.js','MySQL','Tailwind CSS','Framer Motion','Vercel'].map((s,i) => (
                 <motion.span key={s} className="skill-tag"
                   initial={{ opacity:0, y:8 }} animate={inView ? { opacity:1, y:0 } : {}} transition={{ delay:.4 + i*.05 }}
-                  style={{ padding:'.3rem .8rem', background:'rgba(34,200,100,.06)', border:'1px solid rgba(34,200,100,.18)', borderRadius:100, fontFamily:"'JetBrains Mono',monospace", fontSize:'.62rem', color:'rgba(34,200,100,.8)', letterSpacing:'.06em' }}
+                  style={{ padding:'.3rem .8rem', background: T.light?'rgba(22,163,74,.07)':'rgba(34,200,100,.06)', border:`1px solid ${T.border}`, borderRadius:100, fontFamily:"'JetBrains Mono',monospace", fontSize:'.62rem', color:T.green, letterSpacing:'.06em' }}
                 >{s}</motion.span>
               ))}
             </div>
-
-            {/* Stats grid */}
             <div className="about-stats" style={{ marginBottom:'2rem' }}>
               {ABOUT_STATS.map(({ val, label, icon:Icon }, i) => (
-                <motion.div key={label}
-                  initial={{ opacity:0, y:16 }} animate={inView ? { opacity:1, y:0 } : {}} transition={{ delay:.5 + i*.07 }}
-                  className="sku-card" style={{ padding:'.9rem .7rem', textAlign:'center', position:'relative', overflow:'hidden' }}
-                >
-                  <Icon size={14} style={{ color:'rgba(34,200,100,.5)', margin:'0 auto .3rem' }}/>
-                  <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:'1.1rem', fontWeight:900, color:'#22c864', lineHeight:1 }}>
-                    <AnimatedCounter target={val}/>
-                  </div>
-                  <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.52rem', color:'rgba(255,255,255,.3)', textTransform:'uppercase', letterSpacing:'.07em', marginTop:'.25rem', lineHeight:1.3 }}>{label}</div>
+                <motion.div key={label} initial={{ opacity:0, y:16 }} animate={inView ? { opacity:1, y:0 } : {}} transition={{ delay:.5 + i*.07 }}
+                  className="sku-card" style={{ padding:'.9rem .7rem', textAlign:'center' }}>
+                  <Icon size={14} style={{ color:T.green, margin:'0 auto .3rem' }}/>
+                  <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:'1.1rem', fontWeight:900, color:T.green, lineHeight:1 }}><AnimatedCounter target={val}/></div>
+                  <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.52rem', color:T.textMuted, textTransform:'uppercase', letterSpacing:'.07em', marginTop:'.25rem', lineHeight:1.3 }}>{label}</div>
                 </motion.div>
               ))}
             </div>
 
             {/* CEO signature */}
             <motion.div initial={{ opacity:0, y:12 }} animate={inView ? { opacity:1, y:0 } : {}} transition={{ delay:.9 }}
-              style={{ display:'flex', alignItems:'center', gap:'1rem', padding:'1rem 1.3rem', borderRadius:14, background:'rgba(34,200,100,.04)', border:'1px solid rgba(34,200,100,.1)' }}>
-              {/* SVG Avatar animé */}
-              <div style={{ width:46, height:46, borderRadius:'50%', background:'linear-gradient(135deg,rgba(34,200,100,.2),rgba(34,200,100,.06))', border:'2px solid rgba(34,200,100,.3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, position:'relative', overflow:'hidden' }}>
+              style={{ display:'flex', alignItems:'center', gap:'1rem', padding:'1rem 1.3rem', borderRadius:14, background: T.light?'rgba(22,163,74,.04)':'rgba(34,200,100,.04)', border:`1px solid ${T.border}` }}>
+              <div style={{ width:46, height:46, borderRadius:'50%', background:'rgba(34,200,100,.15)', border:`2px solid ${T.border2}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                  {/* Tête */}
-                  <circle cx="14" cy="10" r="5.5" fill="rgba(34,200,100,.25)" stroke="#22c864" strokeWidth="1.4"
-                    style={{ animation:'proc-float 2.5s ease-in-out infinite' }}/>
-                  {/* Corps */}
-                  <path d="M4 26 C4 20 8 17 14 17 C20 17 24 20 24 26" stroke="#22c864" strokeWidth="1.4" strokeLinecap="round" fill="rgba(34,200,100,.1)"
-                    style={{ animation:'proc-float 2.5s .3s ease-in-out infinite' }}/>
-                  {/* Point brillant sur la tête */}
-                  <circle cx="16.5" cy="8" r="1.2" fill="#66ffaa" opacity=".7"
-                    style={{ animation:'proc-blink 2s ease-in-out infinite' }}/>
+                  <circle cx="14" cy="10" r="5.5" fill="rgba(34,200,100,.25)" stroke={T.green} strokeWidth="1.4" style={{ animation:'proc-float 2.5s ease-in-out infinite' }}/>
+                  <path d="M4 26 C4 20 8 17 14 17 C20 17 24 20 24 26" stroke={T.green} strokeWidth="1.4" strokeLinecap="round" fill="rgba(34,200,100,.1)" style={{ animation:'proc-float 2.5s .3s ease-in-out infinite' }}/>
+                  <circle cx="16.5" cy="8" r="1.2" fill={T.green} opacity=".7" style={{ animation:'proc-blink 2s ease-in-out infinite' }}/>
                 </svg>
               </div>
               <div>
-                <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, color:'#fff', fontSize:'.88rem' }}>M'Bollo Aka Elvis</div>
-                <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.6rem', color:'rgba(34,200,100,.55)', letterSpacing:'.08em' }}>Fondateur · Développeur Full-Stack · AKATech</div>
+                <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, color:T.textMain, fontSize:'.88rem' }}>M'Bollo Aka Elvis</div>
+                <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.6rem', color:T.greenSub, letterSpacing:'.08em' }}>Fondateur · Développeur Full-Stack · AKATech</div>
               </div>
               <a href="https://akafolio160502.vercel.app/" target="_blank" rel="noreferrer"
                 className="btn-raised" style={{ marginLeft:'auto', padding:'.6rem 1.1rem', fontSize:'.78rem', flexShrink:0, display:'inline-flex', alignItems:'center', gap:'.4rem' }}>
-                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                  <path d="M2 11L11 2M11 2H5M11 2V8" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 11L11 2M11 2H5M11 2V8" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 En savoir plus
               </a>
             </motion.div>
@@ -1333,7 +1544,7 @@ function ServicesBanner() {
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 2.5rem', zIndex: 2 }}>
         <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '.6rem', color: 'rgba(34,200,100,.7)', letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: '.5rem' }}>// AKATech · Services</div>
         <div style={{ fontSize: 'clamp(1.1rem,2.5vw,1.6rem)', fontWeight: 800, color: '#fff', fontFamily: "'Syne',sans-serif", lineHeight: 1.2 }}>
-          Chaque projet mérite<br/><span style={{ color: '#22c864' }}>une solution sur mesure</span>
+          Votre site doit vous rapporter de l'argent.<br/><span style={{ color: '#22c864' }}>On s'en assure.</span>
         </div>
       </div>
       <div style={{ position: 'absolute', bottom: '.8rem', right: '1rem', display: 'flex', gap: '.35rem', zIndex: 2 }}>
@@ -1347,53 +1558,48 @@ function ServicesBanner() {
 
 // ── SERVICES ─────────────────────────────────────────────────
 const SVCS=[
-  {icon:Globe,     n:'01',title:'Site Vitrine',        desc:'Design responsive, SEO de base, formulaire de contact et mise en ligne. Votre vitrine digitale parfaite.',price:'Dès 60 000 FCFA',del:'5–14 jours'},
-  {icon:ShoppingCart,n:'02',title:'E-commerce',        desc:'Vendez en ligne 24h/24. Catalogue, panier, paiement sécurisé, interface admin complète.',price:'Dès 200 000 FCFA',del:'10j–4 sem'},
-  {icon:Cpu,       n:'03',title:'Application SaaS',    desc:'Apps web sur mesure. Dashboard, API REST, authentification, base de données MySQL.',price:'Dès 500 000 FCFA',del:'3–8 semaines'},
-  {icon:Star,      n:'04',title:'Portfolio',           desc:'Mettez vos réalisations en valeur. Design moderne, animations fluides, section projets.',price:'Dès 50 000 FCFA',del:'3–10 jours'},
-  {icon:Server,    n:'05',title:'API RESTful',         desc:'APIs sécurisées et documentées. Python/Flask ou Node.js, prêtes pour la production.',price:'Sur devis',del:'Selon complexité'},
-  {icon:Wrench,    n:'06',title:'Maintenance',         desc:'Mises à jour, bugs, optimisation performances. Réponse rapide garantie sous 24h.',price:'Sur devis',del:'< 24h'},
+  {icon:Globe,     n:'01',title:'Site Vitrine',        desc:'Présentez votre activité en ligne, gagnez en crédibilité et recevez des demandes 24h/24 — même quand vous êtes occupé.',price:'Dès 60 000 FCFA',del:'5–14 jours'},
+  {icon:ShoppingCart,n:'02',title:'E-commerce',        desc:'Ouvrez votre boutique en ligne et vendez partout en Côte d\'Ivoire. Catalogue, panier, paiement sécurisé, gestion des commandes.',price:'Dès 200 000 FCFA',del:'10j–4 sem'},
+  {icon:Cpu,       n:'03',title:'Application SaaS',    desc:'Automatisez la gestion de votre business avec une plateforme sur mesure. Dashboard, authentification, API — prêt à scaler.',price:'Dès 500 000 FCFA',del:'3–8 semaines'},
+  {icon:Star,      n:'04',title:'Portfolio',           desc:'Mettez vos réalisations en valeur et attirez de nouvelles opportunités. Design moderne, animations fluides, section projets détaillée.',price:'Dès 50 000 FCFA',del:'3–10 jours'},
+  {icon:Server,    n:'05',title:'API RESTful',         desc:'APIs sécurisées, documentées et prêtes pour la production. Connectez vos apps entre elles et gagnez du temps sur l\'intégration.',price:'Sur devis',del:'Selon complexité'},
+  {icon:Wrench,    n:'06',title:'Maintenance',         desc:'Votre site toujours à jour, rapide et sécurisé. Corrections de bugs, mises à jour et optimisations — réponse garantie sous 24h.',price:'Sur devis',del:'< 24h'},
 ]
 
 function Services() {
   const ref=useRef(null); const inView=useInView(ref,{once:true,margin:'-80px'})
+  const T=useTheme()
   return (
-    <section id="services" ref={ref} style={{padding:'7rem 5%',background:'var(--dark2)',position:'relative'}}>
+    <section id="services" ref={ref} style={{padding:'7rem 5%',background:T.bg,position:'relative'}}>
       <div className="grid-bg" style={{position:'absolute',inset:0,opacity:.4}}/>
       <div style={{maxWidth:1200,margin:'0 auto',position:'relative',zIndex:1}}>
         <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.6}} style={{textAlign:'center',marginBottom:'4rem'}}>
           <SectionEye label="// Nos Services" ghost="SERVICES" center/>
-          <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",letterSpacing:'-.03em',lineHeight:1.15,color:'#fff'}}>
-            Des services conçus pour<br/>
-            <span className="text-gradient-anim">faire grandir votre business</span>
+          <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",letterSpacing:'-.03em',lineHeight:1.15,color:T.textMain}}>
+            Des solutions qui travaillent pour vous,<br/>
+            <span className="text-gradient-anim">même quand vous dormez</span>
           </h2>
         </motion.div>
         <ServicesBanner/>
         <ScrollHint label="Swipe pour voir les services"/>
         <div className="svc-scroll" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(320px,1fr))',gap:'1.2rem'}}>
           {SVCS.map(({icon:Icon,n,title,desc,price,del},i)=>(
-            <motion.div key={title} className="sku-card" initial={{opacity:0,y:32,scale:.97}} animate={inView?{opacity:1,y:0,scale:1}:{}} transition={{duration:.55,delay:(i%3)*.12,ease:[.22,1,.36,1]}}
-              whileHover={{ y:-6, boxShadow:'10px 10px 32px #010402,-4px -4px 20px rgba(34,200,100,.12),0 0 40px rgba(34,200,100,.2)', borderColor:'rgba(34,200,100,.35)', transition:{duration:.25} }}
+            <motion.div key={title} className="sku-card" initial={{opacity:0,y:32,scale:.97}} animate={inView?{opacity:1,y:0,scale:1}:{}} transition={{duration:.55,delay:(i%3)*.12}}
               style={{padding:'1.8rem',position:'relative',overflow:'hidden'}}
             >
-              {/* corner glow */}
-              <div style={{position:'absolute',top:-30,right:-30,width:120,height:120,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.1),transparent 70%)',pointerEvents:'none'}}/>
               <div style={{display:'flex',alignItems:'center',gap:'1rem',marginBottom:'1.2rem'}}>
-                <div style={{width:50,height:50,borderRadius:12,background:'linear-gradient(145deg,rgba(34,200,100,.15),rgba(34,200,100,.05))',border:'1px solid rgba(34,200,100,.2)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'inset 2px 2px 6px rgba(0,0,0,.4),inset -1px -1px 4px rgba(34,200,100,.1)'}}>
-                  <Icon size={22} style={{color:'#22c864'}}/>
+                <div style={{width:50,height:50,borderRadius:12,background:'rgba(34,200,100,.1)',border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <Icon size={22} style={{color:T.green}}/>
                 </div>
                 <div>
-                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',color:'rgba(34,200,100,.5)',letterSpacing:'.1em',marginBottom:'.2rem'}}>{n}</div>
-                  <h3 style={{fontSize:'1rem',fontWeight:700,color:'#fff',fontFamily:"'Syne',sans-serif"}}>{title}</h3>
-                </div>
-                <div style={{marginLeft:'auto',width:28,height:28,borderRadius:'50%',border:'1px solid rgba(34,200,100,.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <ArrowRight size={12} style={{color:'rgba(34,200,100,.5)'}}/>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',color:T.greenSub,letterSpacing:'.1em',marginBottom:'.2rem'}}>{n}</div>
+                  <h3 style={{fontSize:'1rem',fontWeight:700,color:T.textMain,fontFamily:"'Syne',sans-serif"}}>{title}</h3>
                 </div>
               </div>
-              <p style={{fontSize:'.83rem',color:'rgba(255,255,255,.45)',lineHeight:1.7,marginBottom:'1.2rem'}}>{desc}</p>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:'.9rem',borderTop:'1px solid rgba(34,200,100,.08)'}}>
-                <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:'.78rem',fontWeight:700,color:'#22c864'}}>{price}</span>
-                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.62rem',color:'rgba(255,255,255,.3)',display:'inline-flex',alignItems:'center',gap:3}}><Timer size={11} style={{color:'rgba(34,200,100,.5)'}}/>{del}</span>
+              <p style={{fontSize:'.83rem',color:T.textSub,lineHeight:1.7,marginBottom:'1.2rem'}}>{desc}</p>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:'.9rem',borderTop:`1px solid ${T.border}`}}>
+                <span style={{fontFamily:"'Orbitron',sans-serif",fontSize:'.78rem',fontWeight:700,color:T.green}}>{price}</span>
+                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.62rem',color:T.textMuted,display:'inline-flex',alignItems:'center',gap:3}}><Timer size={11} style={{color:T.green}}/>{del}</span>
               </div>
             </motion.div>
           ))}
@@ -1405,33 +1611,30 @@ function Services() {
 
 // ── TRUST BAR (Why Us) ───────────────────────────────────────
 const TRUST=[
-  {n:'01',title:'Livraison dans les délais',    desc:'Respect des engagements, toujours.'},
-  {n:'02',title:'Design 100% sur mesure',       desc:'Zéro template générique.'},
-  {n:'03',title:'Support & Formation inclus',   desc:'Vous êtes autonome après livraison.'},
-  {n:'04',title:'SEO & Performance optimisés',  desc:'Visible sur Google, rapide partout.'},
+  {n:'01',title:'Livraison dans les délais',    desc:'Pas de mauvaises surprises. Chaque projet est livré à la date convenue, avec un suivi régulier jusqu\'à la mise en ligne.'},
+  {n:'02',title:'Design 100% sur mesure',       desc:'Votre site est unique, pensé pour votre activité. Zéro template, zéro copier-coller — une identité visuelle qui vous ressemble.'},
+  {n:'03',title:'Support & Formation inclus',   desc:'Vous repartez autonome. Une formation est incluse pour gérer votre site facilement, sans dépendre d\'un technicien.'},
+  {n:'04',title:'SEO & Performance optimisés',  desc:'Un site rapide, visible sur Google. Vos clients vous trouvent plus facilement — et votre crédibilité monte instantanément.'},
 ]
 
 function TrustBar() {
   const ref=useRef(null); const inView=useInView(ref,{once:true,margin:'-60px'})
+  const T=useTheme()
   return (
-    <section ref={ref} style={{padding:'6rem 5%',background:'linear-gradient(135deg,#07150a,#0a1f10)',position:'relative',overflow:'hidden'}}>
-      <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'60vw',height:'60vw',maxWidth:700,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 60%)',pointerEvents:'none'}}/>
+    <section ref={ref} style={{padding:'6rem 5%',background:T.bgAlt,position:'relative',overflow:'hidden'}}>
       <div style={{maxWidth:1200,margin:'0 auto',position:'relative',zIndex:1}}>
         <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.6}} style={{textAlign:'center',marginBottom:'3.5rem'}}>
           <SectionEye label="// Built on Trust" ghost="TRUST" center/>
-          <h2 style={{fontSize:'clamp(1.9rem,3vw,2.6rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
-            Construit sur la confiance.{' '}<span style={{color:'#22c864'}}>Porté par les résultats.</span>
+          <h2 style={{fontSize:'clamp(1.9rem,3vw,2.6rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:T.textMain,letterSpacing:'-.03em'}}>
+            Pourquoi les entrepreneurs{' '}<span style={{color:T.green}}>choisissent AKATech.</span>
           </h2>
         </motion.div>
         <div className="trust-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'1rem'}}>
           {TRUST.map(({n,title,desc},i)=>(
-            <motion.div key={n} className="sku-card" initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{delay:i*.08}} style={{padding:'1.8rem',position:'relative'}}>
-              <div style={{position:'absolute',top:'.9rem',right:'.9rem',width:28,height:28,borderRadius:'50%',border:'1px solid rgba(34,200,100,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                <ArrowRight size={11} style={{color:'rgba(34,200,100,.4)'}}/>
-              </div>
-              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:'1.8rem',fontWeight:900,color:'rgba(34,200,100,.25)',lineHeight:1,marginBottom:'.8rem'}}>{n}</div>
-              <h3 style={{fontSize:'.95rem',fontWeight:700,color:'#fff',fontFamily:"'Syne',sans-serif",marginBottom:'.4rem'}}>{title}</h3>
-              <p style={{fontSize:'.8rem',color:'rgba(255,255,255,.4)',lineHeight:1.6}}>{desc}</p>
+            <motion.div key={n} className="sku-card" initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{delay:i*.08}} style={{padding:'1.8rem'}}>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:'1.8rem',fontWeight:900,color:T.green,opacity:.3,lineHeight:1,marginBottom:'.8rem'}}>{n}</div>
+              <h3 style={{fontSize:'.95rem',fontWeight:700,color:T.textMain,fontFamily:"'Syne',sans-serif",marginBottom:'.4rem'}}>{title}</h3>
+              <p style={{fontSize:'.8rem',color:T.textSub,lineHeight:1.6}}>{desc}</p>
             </motion.div>
           ))}
         </div>
@@ -1545,25 +1748,26 @@ function IconLivraison({ active }) {
 }
 
 const STEPS = [
-  { SvgIcon: IconConsultation, n:'01', title:'Consultation',   desc:'On échange sur votre projet, vos besoins et vos objectifs. Devis gratuit, sans engagement.' },
-  { SvgIcon: IconStrategie,    n:'02', title:'Stratégie',      desc:'On définit ensemble la solution technique la plus adaptée à votre activité et votre budget.' },
-  { SvgIcon: IconDeveloppement,n:'03', title:'Développement',  desc:'Création de votre solution avec les meilleures technologies — design soigné, code propre.' },
-  { SvgIcon: IconLivraison,    n:'04', title:'Livraison',      desc:'Mise en ligne, formation et support inclus. Votre projet lancé dans les délais convenus.' },
+  { SvgIcon: IconConsultation, n:'01', title:'On vous écoute',     desc:'Vous décrivez votre projet, vos objectifs et votre budget. Devis gratuit et personnalisé, sans engagement.' },
+  { SvgIcon: IconStrategie,    n:'02', title:'On planifie',        desc:'On définit ensemble la meilleure solution pour votre activité : technologies, design, délais et fonctionnalités.' },
+  { SvgIcon: IconDeveloppement,n:'03', title:'On développe',       desc:'Votre solution prend vie avec un code propre et un design soigné. Vous suivez l\'avancement à chaque étape.' },
+  { SvgIcon: IconLivraison,    n:'04', title:'On livre & on forme', desc:'Mise en ligne, tests, formation et support inclus. Vous repartez avec un outil prêt à attirer des clients.' },
 ]
 
 function Process() {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-60px' })
   const [hovered, setHovered] = useState(null)
+  const T = useTheme()
 
   return (
-    <section id="process" ref={ref} style={{ padding:'7rem 5%', background:'var(--dark1)', position:'relative' }}>
+    <section id="process" ref={ref} style={{ padding:'7rem 5%', background:T.bg, position:'relative' }}>
       <div className="grid-bg" style={{ position:'absolute', inset:0, opacity:.3 }}/>
       <div style={{ maxWidth:1200, margin:'0 auto', position:'relative', zIndex:1 }}>
         <motion.div initial={{ opacity:0, y:20 }} animate={inView ? { opacity:1, y:0 } : {}} style={{ textAlign:'center', marginBottom:'4rem' }}>
           <SectionEye label="// Notre Processus" ghost="PROCESS" center/>
-          <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:'#fff', letterSpacing:'-.03em' }}>
-            Notre processus <span style={{ color:'#22c864' }}>éprouvé</span>
+          <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:T.textMain, letterSpacing:'-.03em' }}>
+            De l'idée au lancement,{' '}<span style={{ color:T.green }}>on s'occupe de tout.</span>
           </h2>
         </motion.div>
 
@@ -1610,17 +1814,17 @@ function Process() {
               </motion.div>
 
               <motion.h3
-                animate={{ color: hovered === i ? '#22c864' : '#fff' }}
+                animate={{ color: hovered === i ? T.green : T.textMain }}
                 transition={{ duration:.2 }}
                 style={{ fontSize:'1rem', fontWeight:700, fontFamily:"'Syne',sans-serif", marginBottom:'.5rem' }}
               >{title}</motion.h3>
-              <p style={{ fontSize:'.8rem', color:'rgba(255,255,255,.45)', lineHeight:1.65 }}>{desc}</p>
+              <p style={{ fontSize:'.8rem', color:T.textSub, lineHeight:1.65 }}>{desc}</p>
             </motion.div>
           ))}
         </div>
 
         <motion.div initial={{ opacity:0, y:14 }} animate={inView ? { opacity:1, y:0 } : {}} transition={{ delay:.5 }} style={{ display:'flex', justifyContent:'center', marginTop:'3.5rem' }}>
-          <a href="https://wa.me/2250142507750" target="_blank" rel="noreferrer" className="btn-raised">Démarrer mon projet maintenant</a>
+          <a href="https://wa.me/2250142507750" target="_blank" rel="noreferrer" className="btn-raised">Démarrer mon projet — C'est gratuit</a>
         </motion.div>
       </div>
     </section>
@@ -1640,6 +1844,7 @@ const PROJS=[
 
 function ProjectsCarousel() {
   const ref=useRef(null); const inView=useInView(ref,{once:true,margin:'-60px'})
+  const T=useTheme()
   const [idx,setIdx]=useState(0)
   const [paused,setPaused]=useState(false)
   const [dragStart,setDragStart]=useState(null)
@@ -1649,96 +1854,193 @@ function ProjectsCarousel() {
     check(); window.addEventListener('resize',check,{passive:true})
     return()=>window.removeEventListener('resize',check)
   },[])
-  const perView=isMobile?1:3
-  const max=Math.max(0,PROJS.length-perView)
-  const prev=()=>setIdx(i=>Math.max(0,i-1))
-  const next=()=>setIdx(i=>Math.min(max,i+1))
-  const BADGE={live:{label:'EN LIGNE',color:'#22c864',bg:'rgba(34,200,100,.12)'},demo:{label:'DÉMO',color:'#f59e0b',bg:'rgba(245,158,11,.1)'},wip:{label:'EN COURS',color:'#f97316',bg:'rgba(249,115,22,.1)'}}
+  const BADGE={live:{label:'EN LIGNE',color:'#22c864',bg:'rgba(34,200,100,.15)'},demo:{label:'DÉMO',color:'#f59e0b',bg:'rgba(245,158,11,.12)'},wip:{label:'EN COURS',color:'#f97316',bg:'rgba(249,115,22,.12)'}}
 
   // Auto-play
   useEffect(()=>{
     if(paused) return
-    const iv=setInterval(()=>setIdx(i=>i>=max?0:i+1),3200)
+    const iv=setInterval(()=>setIdx(i=>(i+1)%PROJS.length),3200)
     return ()=>clearInterval(iv)
-  },[paused,max])
+  },[paused])
 
   const onDragStart=(clientX)=>setDragStart(clientX)
   const onDragEnd=(clientX)=>{
     if(dragStart===null) return
     const diff=dragStart-clientX
-    if(diff>50) next()
-    else if(diff<-50) prev()
+    if(diff>50) setIdx(i=>(i+1)%PROJS.length)
+    else if(diff<-50) setIdx(i=>(i-1+PROJS.length)%PROJS.length)
     setDragStart(null)
   }
 
+  // Positions relatives par rapport à la carte centrale
+  const getCardStyle=(i)=>{
+    const rel=i-idx
+    const total=PROJS.length
+    // Wrap around: find shortest distance
+    let d=((rel%total)+total)%total
+    if(d>total/2) d=d-total
+
+    if(isMobile) {
+      // Mobile : standard carousel
+      return {
+        position:'absolute', top:0, left:'50%',
+        transform:`translateX(calc(-50% + ${d*105}%))`,
+        width:'88vw', maxWidth:360,
+        opacity: Math.abs(d)<=1?1:0,
+        zIndex: Math.abs(d)===0?10:5,
+        transition:'all .5s cubic-bezier(.22,1,.36,1)',
+        pointerEvents: Math.abs(d)<=1?'auto':'none',
+      }
+    }
+
+    // Desktop : style NFT 3D
+    const absD=Math.abs(d)
+    if(absD===0) return {
+      position:'absolute', top:0, left:'50%',
+      transform:'translateX(-50%) translateZ(0) rotateY(0deg) scale(1)',
+      width:320, zIndex:10, opacity:1,
+      filter:'none',
+      transition:'all .5s cubic-bezier(.22,1,.36,1)',
+    }
+    if(absD===1) return {
+      position:'absolute', top:'4%', left:'50%',
+      transform:`translateX(calc(-50% + ${d*260}px)) rotateY(${d<0?18:-18}deg) scale(.82)`,
+      width:260, zIndex:8, opacity:.85,
+      filter:'brightness(.75)',
+      transition:'all .5s cubic-bezier(.22,1,.36,1)',
+    }
+    if(absD===2) return {
+      position:'absolute', top:'9%', left:'50%',
+      transform:`translateX(calc(-50% + ${d*260}px)) rotateY(${d<0?28:-28}deg) scale(.67)`,
+      width:220, zIndex:6, opacity:.6,
+      filter:'brightness(.5)',
+      transition:'all .5s cubic-bezier(.22,1,.36,1)',
+    }
+    return {
+      position:'absolute', top:'12%', left:'50%',
+      transform:`translateX(calc(-50% + ${d*270}px)) rotateY(${d<0?35:-35}deg) scale(.56)`,
+      width:200, zIndex:4, opacity:.3,
+      filter:'brightness(.35)',
+      transition:'all .5s cubic-bezier(.22,1,.36,1)',
+      pointerEvents:'none',
+    }
+  }
+
+  // Hauteur du conteneur selon le mode
+  const containerH = isMobile ? 420 : 480
+
   return (
-    <section id="projets" ref={ref} style={{padding:'7rem 5%',background:'var(--dark2)',position:'relative',overflow:'hidden'}}>
-      <div style={{position:'absolute',right:'-10%',top:'20%',width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.07),transparent 60%)',pointerEvents:'none'}}/>
-      <div style={{maxWidth:1200,margin:'0 auto',position:'relative',zIndex:1}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'3rem',flexWrap:'wrap',gap:'1rem'}}>
+    <section id="projets" ref={ref} style={{padding:'7rem 5%',background:T.bg,position:'relative',overflow:'hidden'}}>
+      {/* Ambient glow derrière les cartes */}
+      {!isMobile && (
+        <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:600,height:300,borderRadius:'50%',background:'radial-gradient(ellipse,rgba(34,200,100,.12),transparent 70%)',pointerEvents:'none',zIndex:0}}/>
+      )}
+
+      <div style={{maxWidth:1300,margin:'0 auto',position:'relative',zIndex:1}}>
+
+        {/* Header */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom: isMobile?'2rem':'3.5rem',flexWrap:'wrap',gap:'1rem'}}>
           <motion.div initial={{opacity:0,x:-20}} animate={inView?{opacity:1,x:0}:{}}>
             <SectionEye label="// Réalisations" ghost="WORK"/>
-            <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
-              Ils ont fait <span style={{color:'#22c864'}}>confiance à AKATech</span>
+            <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:T.textMain,letterSpacing:'-.03em'}}>
+              Ce qu'on a déjà <span style={{color:T.green}}>construit pour nos clients</span>
             </h2>
           </motion.div>
           <div style={{display:'flex',gap:'.7rem',alignItems:'center'}}>
-            <motion.button onClick={prev} disabled={idx===0} whileTap={{scale:.95}} style={{width:44,height:44,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',background:idx===0?'rgba(255,255,255,.03)':'linear-gradient(145deg,#0e2416,#081208)',border:'1px solid rgba(34,200,100,.2)',cursor:idx===0?'not-allowed':'pointer',opacity:idx===0?.35:1,boxShadow:idx===0?'none':'4px 4px 10px #010402,-2px -2px 8px rgba(34,200,100,.06)'}}>
-              <ChevronLeft size={18} style={{color:'#66ffaa'}}/>
+            <motion.button onClick={()=>setIdx(i=>(i-1+PROJS.length)%PROJS.length)} whileTap={{scale:.95}}
+              style={{width:44,height:44,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',background:T.bgCard,border:`1px solid ${T.border}`,cursor:'pointer'}}>
+              <ChevronLeft size={18} style={{color:T.green}}/>
             </motion.button>
-            <motion.button onClick={next} disabled={idx>=max} whileTap={{scale:.95}} style={{width:44,height:44,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',background:idx>=max?'rgba(255,255,255,.03)':'linear-gradient(145deg,#27d570,#1aa355)',border:'none',cursor:idx>=max?'not-allowed':'pointer',opacity:idx>=max?.35:1,boxShadow:idx>=max?'none':'4px 4px 10px rgba(0,0,0,.5),-2px -2px 6px rgba(34,200,100,.1)'}}>
+            <motion.button onClick={()=>setIdx(i=>(i+1)%PROJS.length)} whileTap={{scale:.95}}
+              style={{width:44,height:44,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(145deg,#27d570,#1aa355)',border:'none',cursor:'pointer'}}>
               <ChevronRight size={18} style={{color:'#fff'}}/>
             </motion.button>
             <a href="https://akafolio160502.vercel.app/" target="_blank" rel="noreferrer" className="btn-ghost" style={{padding:'.55rem 1.2rem',fontSize:'.8rem'}}>Portfolio →</a>
           </div>
         </div>
 
-        {/* Carousel */}
+        {/* Scène 3D cartes */}
         <ScrollHint label="Swipe pour voir les projets"/>
-        <div style={{overflow:'hidden',cursor:'grab',userSelect:'none'}}
+        <div
+          style={{position:'relative',height:containerH,perspective:isMobile?'none':'1200px',perspectiveOrigin:'50% 40%',userSelect:'none',cursor:'grab'}}
           onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)}
-          onMouseDown={e=>onDragStart(e.clientX)}
-          onMouseUp={e=>onDragEnd(e.clientX)}
-          onTouchStart={e=>onDragStart(e.touches[0].clientX)}
-          onTouchEnd={e=>onDragEnd(e.changedTouches[0].clientX)}
+          onMouseDown={e=>onDragStart(e.clientX)} onMouseUp={e=>onDragEnd(e.clientX)}
+          onTouchStart={e=>onDragStart(e.touches[0].clientX)} onTouchEnd={e=>onDragEnd(e.changedTouches[0].clientX)}
         >
-          <motion.div animate={{x:`calc(-${idx*(100/perView)}% - ${idx*1.2}rem/3)`}} transition={{type:'spring',stiffness:300,damping:30}} style={{display:'grid',gridTemplateColumns:`repeat(${PROJS.length}, calc(${100/perView}% - ${(perView-1)*1.2/perView}rem))`,gap:'1.2rem',width:'100%'}}>
-            {PROJS.map((p)=>{
-              const b=BADGE[p.cat]
-              return (
-                <div key={p.id} className="sku-card proj-card" style={{overflow:'hidden',flexShrink:0}}>
-                  <div style={{height:180,overflow:'hidden',position:'relative',background:'var(--dark4)'}}>
-                    <LazyImg src={p.img} alt={p.title} className="proj-img"
-                      style={{width:'100%',height:'100%',objectFit:'cover'}}
-                      placeholder={
-                        <div className="img-ph" style={{height:180,position:'absolute',inset:0,display:'flex'}}>
-                          <Globe size={28} style={{opacity:.3}}/><span>{p.title}</span>
-                        </div>
-                      }
-                    />
-                    <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(6,14,9,.8),transparent 50%)'}}/>
-                    <div style={{position:'absolute',top:'.7rem',left:'.7rem',padding:'.2rem .7rem',borderRadius:4,background:b.bg,color:b.color,fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',fontWeight:700,letterSpacing:'.06em'}}>{b.label}</div>
-                    {p.premium&&<div style={{position:'absolute',top:'.7rem',right:'.7rem',width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#f59e0b,#f97316)',display:'flex',alignItems:'center',justifyContent:'center'}}><Star size={11} fill="white" color="white"/></div>}
-                  </div>
-                  <div style={{padding:'1.2rem'}}>
-                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',color:'rgba(34,200,100,.5)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'.3rem'}}>{p.sub}</div>
-                    <h3 style={{fontSize:'.95rem',fontWeight:700,color:'#fff',fontFamily:"'Syne',sans-serif",marginBottom:'.4rem'}}>{p.title}</h3>
-                    <p style={{fontSize:'.78rem',color:'rgba(255,255,255,.4)',lineHeight:1.6,marginBottom:'.8rem'}}>{p.desc}</p>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:'.3rem',marginBottom:'.8rem'}}>
-                      {p.tech.map(t=><span key={t} className="tech-badge" style={{padding:'.15rem .5rem',background:'rgba(34,200,100,.07)',border:'1px solid rgba(34,200,100,.15)',borderRadius:4,fontFamily:"'JetBrains Mono',monospace",fontSize:'.56rem',color:'rgba(34,200,100,.7)'}}>{t}</span>)}
+          {PROJS.map((p,i)=>{
+            const b=BADGE[p.cat]
+            const s=getCardStyle(i)
+            const isCurrent=((i-idx+PROJS.length)%PROJS.length===0)
+            return (
+              <div key={p.id} onClick={()=>!isMobile&&setIdx(i)}
+                style={{...s,borderRadius:20,overflow:'hidden',cursor:isCurrent?'default':'pointer',
+                  background: isCurrent
+                    ? (T.light?'#ffffff':'linear-gradient(145deg,#0e2416,#0b1a10)')
+                    : (T.light?'#f0f0f0':'#060e09'),
+                  border: isCurrent
+                    ? `1px solid ${T.light?'rgba(22,163,74,.35)':'rgba(34,200,100,.35)'}`
+                    : `1px solid ${T.border}`,
+                  boxShadow: isCurrent
+                    ? (T.light
+                        ? '0 24px 60px rgba(0,0,0,.18), 0 8px 24px rgba(22,163,74,.12)'
+                        : '0 24px 80px rgba(0,0,0,.7), 0 0 40px rgba(34,200,100,.2), inset 0 1px 0 rgba(34,200,100,.1)')
+                    : '0 8px 24px rgba(0,0,0,.3)',
+                }}
+              >
+                {/* Image */}
+                <div style={{height: isCurrent?220:160,overflow:'hidden',position:'relative',flexShrink:0}}>
+                  <LazyImg src={p.img} alt={p.title} className="proj-img"
+                    style={{width:'100%',height:'100%',objectFit:'cover'}}
+                    placeholder={<div className="img-ph" style={{height:'100%',position:'absolute',inset:0}}><Globe size={24} style={{opacity:.3}}/><span>{p.title}</span></div>}
+                  />
+                  {/* Gradient overlay */}
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.75) 0%,transparent 55%)'}}/>
+                  {/* Badge statut */}
+                  <div style={{position:'absolute',top:'.65rem',left:'.65rem',padding:'.18rem .6rem',borderRadius:4,background:b.bg,backdropFilter:'blur(8px)',border:`1px solid ${b.color}30`,color:b.color,fontFamily:"'JetBrains Mono',monospace",fontSize:'.55rem',fontWeight:700,letterSpacing:'.06em'}}>{b.label}</div>
+                  {/* Badge premium */}
+                  {p.premium&&<div style={{position:'absolute',top:'.65rem',right:'.65rem',width:22,height:22,borderRadius:'50%',background:'linear-gradient(135deg,#f59e0b,#f97316)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 2px 8px rgba(249,115,22,.5)'}}><Star size={10} fill="white" color="white"/></div>}
+                  {/* Titre flottant sur l'image */}
+                  {isCurrent && (
+                    <div style={{position:'absolute',bottom:'.8rem',left:'.9rem',right:'.9rem'}}>
+                      <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.56rem',color:'rgba(255,255,255,.6)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'.2rem'}}>{p.sub}</div>
+                      <div style={{fontSize:'1rem',fontWeight:800,color:'#fff',fontFamily:"'Syne',sans-serif",lineHeight:1.2}}>{p.title}</div>
                     </div>
-                    {p.url?<a href={p.url} target="_blank" rel="noreferrer" style={{display:'inline-flex',alignItems:'center',gap:'.4rem',fontSize:'.78rem',fontWeight:600,color:'#22c864'}}><ExternalLink size={12}/>Voir le projet</a>:<span style={{display:'inline-flex',alignItems:'center',gap:'.4rem',fontSize:'.78rem',color:'rgba(255,255,255,.3)'}}><Lock size={12}/>Démo locale</span>}
-                  </div>
+                  )}
                 </div>
-              )
-            })}
-          </motion.div>
+
+                {/* Infos (carte centrale seulement en desktop) */}
+                {(isCurrent || isMobile) && (
+                  <div style={{padding:'1rem 1.1rem'}}>
+                    {isMobile && <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.56rem',color:T.greenSub,letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'.25rem'}}>{p.sub}</div>}
+                    {isMobile && <div style={{fontSize:'.92rem',fontWeight:700,color:T.textMain,fontFamily:"'Syne',sans-serif",marginBottom:'.4rem'}}>{p.title}</div>}
+                    <p style={{fontSize:'.76rem',color:T.textSub,lineHeight:1.6,marginBottom:'.7rem'}}>{p.desc}</p>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:'.25rem',marginBottom:'.8rem'}}>
+                      {p.tech.map(t=>(
+                        <span key={t} style={{padding:'.14rem .5rem',background:'rgba(34,200,100,.07)',border:`1px solid ${T.border}`,borderRadius:4,fontFamily:"'JetBrains Mono',monospace",fontSize:'.54rem',color:T.green}}>{t}</span>
+                      ))}
+                    </div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:'.7rem',borderTop:`1px solid ${T.border}`}}>
+                      {p.url
+                        ? <a href={p.url} target="_blank" rel="noreferrer"
+                            style={{display:'inline-flex',alignItems:'center',gap:'.4rem',fontSize:'.76rem',fontWeight:700,color:'#fff',background:`linear-gradient(135deg,${T.green},${T.light?'#22c864':'#17a354'})`,padding:'.38rem .9rem',borderRadius:8,textDecoration:'none',transition:'transform .2s'}}
+                            onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'}
+                            onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>
+                            <ExternalLink size={11}/>Voir le projet
+                          </a>
+                        : <span style={{display:'inline-flex',alignItems:'center',gap:'.4rem',fontSize:'.74rem',color:T.textMuted}}><Lock size={11}/>Démo locale</span>
+                      }
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* Dots */}
-        <div style={{display:'flex',justifyContent:'center',gap:'.5rem',marginTop:'2rem'}}>
-          {[...Array(max+1)].map((_,i)=>(
-            <button key={i} onClick={()=>setIdx(i)} style={{width:i===idx?24:6,height:6,borderRadius:3,background:i===idx?'#22c864':'rgba(34,200,100,.2)',border:'none',cursor:'pointer',transition:'all .25s',padding:0}}/>
+        <div style={{display:'flex',justifyContent:'center',gap:'.45rem',marginTop:'2rem'}}>
+          {PROJS.map((_,i)=>(
+            <button key={i} onClick={()=>setIdx(i)} style={{width:i===idx?24:7,height:7,borderRadius:4,background:i===idx?T.green:T.border,border:'none',cursor:'pointer',transition:'all .3s',padding:0}}/>
           ))}
         </div>
       </div>
@@ -1773,27 +2075,26 @@ const PRICING={
 function Pricing() {
   const [tab,setTab]=useState('vitrine')
   const ref=useRef(null); const inView=useInView(ref,{once:true,margin:'-60px'})
+  const T=useTheme()
   const d=PRICING[tab]
   return (
-    <section id="tarifs" ref={ref} style={{padding:'7rem 5%',background:'var(--dark1)',position:'relative'}}>
+    <section id="tarifs" ref={ref} style={{padding:'7rem 5%',background:T.bgAlt,position:'relative'}}>
       <div className="grid-bg" style={{position:'absolute',inset:0,opacity:.3}}/>
       <div style={{maxWidth:1200,margin:'0 auto',position:'relative',zIndex:1}}>
         <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} style={{textAlign:'center',marginBottom:'3rem'}}>
           <SectionEye label="// Tarifs" ghost="PRICING" center/>
-          <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
-            Nos offres & <span style={{color:'#22c864'}}>tarifs clairs</span>
+          <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:T.textMain,letterSpacing:'-.03em'}}>
+            Des offres claires,{' '}<span style={{color:T.green}}>pour chaque étape de votre projet</span>
           </h2>
+          <p style={{marginTop:'.8rem',fontSize:'.9rem',color:T.textMuted}}>Pas de frais cachés. Devis gratuit et sans engagement.</p>
         </motion.div>
-
-        {/* Tabs */}
         <div className="pricing-tabs" style={{display:'flex',justifyContent:'center',gap:'.4rem',marginBottom:'3rem'}}>
           {Object.entries(PRICING).map(([k,v])=>(
-            <button key={k} onClick={()=>setTab(k)} style={{padding:'.5rem 1.4rem',borderRadius:100,border:'1px solid',flexShrink:0,borderColor:tab===k?'#22c864':'rgba(34,200,100,.15)',background:tab===k?'linear-gradient(145deg,#27d570,#1aa355)':'linear-gradient(145deg,rgba(34,200,100,.04),rgba(34,200,100,.01))',color:tab===k?'#fff':'rgba(255,255,255,.5)',fontFamily:"'Syne',sans-serif",fontSize:'.82rem',fontWeight:700,cursor:'pointer',transition:'all .22s',boxShadow:tab===k?'4px 4px 12px rgba(0,0,0,.5),var(--glow)':'2px 2px 8px rgba(0,0,0,.3)'}}>
+            <button key={k} onClick={()=>setTab(k)} style={{padding:'.5rem 1.4rem',borderRadius:100,border:'1px solid',flexShrink:0,borderColor:tab===k?T.green:T.border,background:tab===k?'linear-gradient(145deg,#27d570,#1aa355)':'transparent',color:tab===k?'#fff':T.textSub,fontFamily:"'Syne',sans-serif",fontSize:'.82rem',fontWeight:700,cursor:'pointer',transition:'all .22s'}}>
               {v.label}
             </button>
           ))}
         </div>
-
         <ScrollHint label="Swipe pour comparer les offres"/>
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.3}}
@@ -1803,16 +2104,16 @@ function Pricing() {
             {d.plans.map((p,i)=>{
               const wa=encodeURIComponent(`Bonjour AKATech, intéressé par l'offre ${p.badge} à ${p.price}`)
               return (
-                <div key={p.badge} className="sku-card" style={{padding:'2rem',position:'relative',overflow:'hidden',border:p.popular?'1px solid rgba(34,200,100,.4)':'1px solid var(--border)',boxShadow:p.popular?'8px 8px 24px #010402,-4px -4px 16px rgba(34,200,100,.1),var(--glow)':'var(--skeu-shadow)'}}>
+                <div key={p.badge} className="sku-card" style={{padding:'2rem',position:'relative',overflow:'hidden',border:p.popular?`1px solid ${T.green}`:`1px solid ${T.border}`}}>
                   {p.popular&&<div style={{position:'absolute',top:0,left:0,right:0,padding:'.35rem',background:'linear-gradient(90deg,#17a354,#22c864)',textAlign:'center',fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',fontWeight:700,color:'#fff',letterSpacing:'.1em',display:'flex',alignItems:'center',justifyContent:'center',gap:'.4rem',borderRadius:'17px 17px 0 0'}}><Zap size={10}/>LE PLUS POPULAIRE</div>}
                   <div style={{marginTop:p.popular?'1.2rem':0}}>
-                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.6rem',letterSpacing:'.12em',color:'rgba(34,200,100,.6)',textTransform:'uppercase',marginBottom:'.6rem'}}>{p.badge}</div>
-                    <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:p.price.length>10?'1.05rem':'1.35rem',fontWeight:900,color:'#fff',marginBottom:'.25rem'}}>{p.price}</div>
-                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.62rem',color:'rgba(255,255,255,.35)',marginBottom:'1.4rem',display:'flex',alignItems:'center',gap:3}}><Timer size={11} style={{color:'rgba(34,200,100,.5)'}}/>{p.del}</div>
+                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.6rem',letterSpacing:'.12em',color:T.greenSub,textTransform:'uppercase',marginBottom:'.6rem'}}>{p.badge}</div>
+                    <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:p.price.length>10?'1.05rem':'1.35rem',fontWeight:900,color:T.textMain,marginBottom:'.25rem'}}>{p.price}</div>
+                    <div className="pricing-del" style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.62rem',marginBottom:'1.4rem',display:'flex',alignItems:'center',gap:3}}><Timer size={11} style={{color:T.green}}/>{p.del}</div>
                     <div style={{display:'flex',flexDirection:'column',gap:'.55rem',marginBottom:'1.6rem'}}>
                       {p.features.map(f=>(
-                        <div key={f} className="feat-row" style={{display:'flex',alignItems:'flex-start',gap:'.6rem',fontSize:'.8rem',color:'rgba(255,255,255,.55)',lineHeight:1.5}}>
-                          <Check size={13} style={{color:'#22c864',marginTop:2,flexShrink:0}}/>{f}
+                        <div key={f} className="feat-row" style={{display:'flex',alignItems:'flex-start',gap:'.6rem',fontSize:'.8rem',lineHeight:1.5}}>
+                          <Check size={13} style={{color:T.green,marginTop:2,flexShrink:0}}/>{f}
                         </div>
                       ))}
                     </div>
@@ -1850,156 +2151,78 @@ function AvatarFallback({name,size=52}){
 function Testimonials() {
   const ref = useRef(null)
   const inView = useInView(ref, { once:true, margin:'-60px' })
+  const T = useTheme()
   const [idx, setIdx] = useState(0)
   const [imgErr, setImgErr] = useState({})
   const [paused, setPaused] = useState(false)
   const [dragStart, setDragStart] = useState(null)
-
   const next = () => setIdx(i => (i+1) % TEMOS.length)
   const prev = () => setIdx(i => (i-1+TEMOS.length) % TEMOS.length)
-
-  useEffect(() => {
-    if (paused) return
-    const iv = setInterval(next, 5000)
-    return () => clearInterval(iv)
-  }, [paused])
-
+  useEffect(() => { if (paused) return; const iv = setInterval(next, 5000); return () => clearInterval(iv) }, [paused])
   const onDragStart = (x) => setDragStart(x)
-  const onDragEnd   = (x) => {
-    if (dragStart === null) return
-    const diff = dragStart - x
-    if (diff > 45) next()
-    else if (diff < -45) prev()
-    setDragStart(null)
-  }
-
+  const onDragEnd   = (x) => { if (dragStart === null) return; const diff = dragStart - x; if (diff > 45) next(); else if (diff < -45) prev(); setDragStart(null) }
   const t = TEMOS[idx]
-
   return (
-    <section id="temoignages" ref={ref} style={{ padding:'7rem 5%', background:'var(--dark3)', position:'relative', overflow:'hidden' }}>
-      {/* Ambient orbs */}
-      <div style={{ position:'absolute', left:'-5%', top:'20%', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.05),transparent 60%)', pointerEvents:'none' }}/>
-      <div style={{ position:'absolute', right:'-8%', bottom:'10%', width:400, height:400, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.04),transparent 60%)', pointerEvents:'none' }}/>
-
+    <section id="temoignages" ref={ref} style={{ padding:'7rem 5%', background:T.bg, position:'relative', overflow:'hidden' }}>
       <div style={{ maxWidth:1100, margin:'0 auto', position:'relative', zIndex:1 }}>
-
-        {/* ── Header ── */}
         <motion.div initial={{ opacity:0, y:20 }} animate={inView?{opacity:1,y:0}:{}} style={{ textAlign:'center', marginBottom:'3.5rem' }}>
           <SectionEye label="// Témoignages" ghost="REVIEWS" center/>
-          <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:'#fff', letterSpacing:'-.03em' }}>
-            Ils ont fait confiance à <span style={{ color:'#22c864' }}>AKATech</span>
+          <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:T.textMain, letterSpacing:'-.03em' }}>
+            Des vrais clients. <span style={{ color:T.green }}>De vrais résultats.</span>
           </h2>
-          <p style={{ marginTop:'.8rem', fontSize:'.9rem', color:'rgba(255,255,255,.4)' }}>Des résultats concrets pour de vraies entreprises.</p>
+          <p style={{ marginTop:'.8rem', fontSize:'.9rem', color:T.textMuted }}>Ils nous ont fait confiance — voyez ce que ça a changé pour leur activité.</p>
         </motion.div>
-
-        {/* ── Carousel principal ── */}
-        <div
-          style={{ position:'relative', cursor:'grab', userSelect:'none' }}
+        <div style={{ position:'relative', cursor:'grab', userSelect:'none' }}
           onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
           onMouseDown={e => onDragStart(e.clientX)} onMouseUp={e => onDragEnd(e.clientX)}
-          onTouchStart={e => onDragStart(e.touches[0].clientX)} onTouchEnd={e => onDragEnd(e.changedTouches[0].clientX)}
-        >
+          onTouchStart={e => onDragStart(e.touches[0].clientX)} onTouchEnd={e => onDragEnd(e.changedTouches[0].clientX)}>
           <AnimatePresence mode="wait">
-            <motion.div key={idx}
-              initial={{ opacity:0, x:50, scale:.98 }}
-              animate={{ opacity:1, x:0, scale:1 }}
-              exit={{ opacity:0, x:-50, scale:.98 }}
-              transition={{ duration:.38, ease:[.22,1,.36,1] }}>
-
+            <motion.div key={idx} initial={{ opacity:0, x:50, scale:.98 }} animate={{ opacity:1, x:0, scale:1 }} exit={{ opacity:0, x:-50, scale:.98 }} transition={{ duration:.38 }}>
               <div className="sku-card temo-card" style={{ padding:'2.5rem', position:'relative', overflow:'hidden' }}>
-                {/* Glow coin */}
-                <div style={{ position:'absolute', top:-50, left:-50, width:220, height:220, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.1),transparent 60%)', pointerEvents:'none' }}/>
-                <div style={{ position:'absolute', bottom:-30, right:-30, width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 65%)', pointerEvents:'none' }}/>
-
-                {/* Guillemet décoratif SVG */}
-                <svg width="48" height="36" viewBox="0 0 48 36" fill="none" style={{ position:'absolute', top:'1.5rem', right:'1.8rem', opacity:.1 }}>
-                  <path d="M0 36V22C0 9.85 7.16 3.07 21.47 0L24 5.6C17.07 7.27 13.6 10.93 13.6 16.6H21.6V36H0ZM26.4 36V22C26.4 9.85 33.56 3.07 47.87 0L50.4 5.6C43.47 7.27 40 10.93 40 16.6H48V36H26.4Z" fill="#22c864"/>
-                </svg>
-
                 <div style={{ position:'relative', zIndex:1 }}>
-                  {/* Étoiles + badge vérifié */}
                   <div style={{ display:'flex', alignItems:'center', gap:'.5rem', marginBottom:'1.4rem' }}>
                     <div style={{ display:'flex', gap:'.2rem' }}>
-                      {[...Array(t.rating)].map((_,j) => (
-                        <span key={j} className="star-i">
-                          <Star size={15} fill="#f5b500" color="#f5b500"/>
-                        </span>
-                      ))}
+                      {[...Array(t.rating)].map((_,j) => <span key={j} className="star-i"><Star size={15} fill="#f5b500" color="#f5b500"/></span>)}
                     </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:'.3rem', padding:'.2rem .7rem', background:'rgba(34,200,100,.08)', border:'1px solid rgba(34,200,100,.2)', borderRadius:100 }}>
-                      <BadgeCheck size={11} style={{ color:'#22c864' }}/>
-                      <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.55rem', color:'rgba(34,200,100,.8)', letterSpacing:'.06em' }}>Avis vérifié</span>
+                    <div style={{ display:'flex', alignItems:'center', gap:'.3rem', padding:'.2rem .7rem', background:`rgba(34,200,100,.08)`, border:`1px solid ${T.border}`, borderRadius:100 }}>
+                      <BadgeCheck size={11} style={{ color:T.green }}/>
+                      <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.55rem', color:T.green, letterSpacing:'.06em' }}>Avis vérifié</span>
                     </div>
-                    {/* Badge résultat concret */}
-                    <div style={{ marginLeft:'auto', padding:'.2rem .8rem', background:'rgba(34,200,100,.12)', border:'1px solid rgba(34,200,100,.25)', borderRadius:100, fontFamily:"'JetBrains Mono',monospace", fontSize:'.58rem', color:'#66ffaa', letterSpacing:'.05em', fontWeight:700, whiteSpace:'nowrap' }}>
-                      {t.result}
-                    </div>
+                    <div style={{ marginLeft:'auto', padding:'.2rem .8rem', background:`rgba(34,200,100,.12)`, border:`1px solid ${T.border2}`, borderRadius:100, fontFamily:"'JetBrains Mono',monospace", fontSize:'.58rem', color:T.green, letterSpacing:'.05em', fontWeight:700, whiteSpace:'nowrap' }}>{t.result}</div>
                   </div>
-
-                  {/* Texte témoignage */}
-                  <p style={{ fontSize:'clamp(.95rem,2.2vw,1.08rem)', color:'rgba(255,255,255,.82)', lineHeight:1.85, fontStyle:'italic', marginBottom:'2rem', fontFamily:"'Syne',sans-serif" }}>
-                    "{t.text}"
-                  </p>
-
-                  {/* Auteur + projet */}
+                  <p style={{ fontSize:'clamp(.95rem,2.2vw,1.08rem)', color:T.textSub, lineHeight:1.85, fontStyle:'italic', marginBottom:'2rem', fontFamily:"'Syne',sans-serif" }}>"{t.text}"</p>
                   <div style={{ display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
-                    {/* Avatar */}
                     <div style={{ position:'relative', flexShrink:0 }}>
-                      {imgErr[idx] ? (
-                        <AvatarFallback name={t.name} size={56}/>
-                      ) : (
-                        <LazyImg src={t.img} alt={t.name}
-                          style={{ width:56, height:56, borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(34,200,100,.3)', display:'block' }}
-                          placeholder={<AvatarFallback name={t.name} size={56}/>}
-                        />
+                      {imgErr[idx] ? <AvatarFallback name={t.name} size={56}/> : (
+                        <LazyImg src={t.img} alt={t.name} style={{ width:56, height:56, borderRadius:'50%', objectFit:'cover', border:`2px solid ${T.border2}`, display:'block' }} placeholder={<AvatarFallback name={t.name} size={56}/>}/>
                       )}
-                      {/* Dot en ligne */}
-                      <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, borderRadius:'50%', background:'#22c864', border:'2px solid var(--dark3)' }}/>
+                      <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, borderRadius:'50%', background:T.green, border:`2px solid ${T.bg}` }}/>
                     </div>
-
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:'.95rem', fontWeight:700, color:'#fff', fontFamily:"'Syne',sans-serif", lineHeight:1.2 }}>{t.name}</div>
-                      <div style={{ fontSize:'.72rem', color:'rgba(255,255,255,.4)', marginTop:'.2rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.role}</div>
+                      <div style={{ fontSize:'.95rem', fontWeight:700, color:T.textMain, fontFamily:"'Syne',sans-serif", lineHeight:1.2 }}>{t.name}</div>
+                      <div style={{ fontSize:'.72rem', color:T.textMuted, marginTop:'.2rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.role}</div>
                     </div>
-
-                    {/* Badge projet */}
-                    <div style={{ padding:'.35rem 1rem', background:'linear-gradient(145deg,rgba(34,200,100,.1),rgba(34,200,100,.04))', border:'1px solid rgba(34,200,100,.2)', borderRadius:100, fontFamily:"'JetBrains Mono',monospace", fontSize:'.6rem', color:'rgba(34,200,100,.75)', display:'flex', alignItems:'center', gap:'.35rem', flexShrink:0 }}>
-                      <Code size={10}/>
-                      {t.project}
+                    <div style={{ padding:'.35rem 1rem', background:`rgba(34,200,100,.08)`, border:`1px solid ${T.border}`, borderRadius:100, fontFamily:"'JetBrains Mono',monospace", fontSize:'.6rem', color:T.greenSub, display:'flex', alignItems:'center', gap:'.35rem', flexShrink:0 }}>
+                      <Code size={10}/>{t.project}
                     </div>
                   </div>
                 </div>
               </div>
             </motion.div>
           </AnimatePresence>
-
-          {/* ── Navigation ── */}
           <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'1rem', marginTop:'2rem' }}>
             <motion.button onClick={prev} whileTap={{ scale:.92 }}
-              style={{ width:42, height:42, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(145deg,#0e2416,#081208)', border:'1px solid rgba(34,200,100,.2)', cursor:'pointer', boxShadow:'4px 4px 10px #010402' }}>
-              <ChevronLeft size={16} style={{ color:'#66ffaa' }}/>
+              style={{ width:40, height:40, borderRadius:'50%', background:T.bgCard, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.green }}>
+              <ChevronLeft size={18}/>
             </motion.button>
-
-            {/* Dots + progress bar */}
-            <div style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
-              {TEMOS.map((_,i) => (
-                <button key={i} onClick={() => setIdx(i)}
-                  style={{ width:i===idx?28:8, height:8, borderRadius:4, background:i===idx?'#22c864':'rgba(34,200,100,.2)', border:'none', cursor:'pointer', transition:'all .3s cubic-bezier(.22,1,.36,1)', padding:0, position:'relative', overflow:'hidden' }}>
-                  {i===idx && (
-                    <motion.div
-                      key={`prog-${idx}`}
-                      initial={{ scaleX:0 }} animate={{ scaleX:1 }}
-                      transition={{ duration: paused ? 0 : 5, ease:'linear' }}
-                      style={{ position:'absolute', inset:0, background:'rgba(255,255,255,.35)', transformOrigin:'left', borderRadius:4 }}
-                    />
-                  )}
-                </button>
+            <div style={{ display:'flex', gap:'.4rem' }}>
+              {TEMOS.map((_,i)=>(
+                <button key={i} onClick={()=>setIdx(i)} style={{ width:i===idx?20:7, height:7, borderRadius:4, background:i===idx?T.green:T.border, border:'none', cursor:'pointer', transition:'all .3s', padding:0 }}/>
               ))}
             </div>
-
             <motion.button onClick={next} whileTap={{ scale:.92 }}
-              style={{ width:42, height:42, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(145deg,#27d570,#1aa355)', border:'none', cursor:'pointer', boxShadow:'4px 4px 10px rgba(0,0,0,.5)' }}>
-              <ChevronRight size={16} style={{ color:'#fff' }}/>
+              style={{ width:40, height:40, borderRadius:'50%', background:T.bgCard, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:T.green }}>
+              <ChevronRight size={18}/>
             </motion.button>
           </div>
         </div>
@@ -2008,44 +2231,47 @@ function Testimonials() {
   )
 }
 
+
 // ── FAQ ───────────────────────────────────────────────────────
 const FAQ_D=[
-  {q:"Combien coûte un site web ?",a:"À partir de 50 000 FCFA pour un portfolio et 60 000 FCFA pour un site vitrine. Le prix dépend des fonctionnalités. Devis gratuit après discussion."},
-  {q:"Combien de temps prend la création ?",a:"Un site vitrine est livré en 3 à 14 jours. Un e-commerce prend 10 jours à 4 semaines. Une app SaaS nécessite 3 à 8 semaines selon la complexité."},
-  {q:"Puis-je modifier mon site moi-même ?",a:"Oui ! Une formation rapide est incluse dans la plupart des offres pour que vous puissiez gérer votre site facilement après la livraison."},
-  {q:"Proposez-vous un support après livraison ?",a:"Oui. Support technique disponible après livraison. Le SaaS Premium inclut 3 mois de support complet."},
-  {q:"Les prix sont-ils négociables ?",a:"Chaque projet étant unique, les tarifs peuvent varier. Contactez-moi pour discuter du budget. Le devis est gratuit et sans engagement."},
-  {q:"Où voir des exemples de réalisations ?",a:"Portfolio complet sur akafolio160502.vercel.app. Consultez aussi ShopCI, TechFlow et TerraSafe dans la section Réalisations."},
+  {q:"Combien coûte un site web ?",a:"À partir de 50 000 FCFA pour un portfolio et 60 000 FCFA pour un site vitrine. Le prix final dépend de vos besoins. Le devis est gratuit et sans engagement — contactez-nous et on en discute."},
+  {q:"Combien de temps prend la création ?",a:"Un site vitrine est livré en 3 à 14 jours. Un e-commerce prend 10 jours à 4 semaines. Une app SaaS nécessite 3 à 8 semaines. Vous êtes informé à chaque étape de l'avancement."},
+  {q:"Puis-je modifier mon site moi-même ?",a:"Oui ! Une formation rapide est incluse dans la plupart des offres. Vous repartez autonome — capable de modifier les textes, images et contenus sans dépendre de personne."},
+  {q:"Proposez-vous un support après livraison ?",a:"Oui. Un support technique est disponible après livraison pour corriger les bugs ou répondre à vos questions. Le SaaS Premium inclut 3 mois de support complet."},
+  {q:"Les prix sont-ils négociables ?",a:"Chaque projet étant unique, les tarifs s'adaptent à votre réalité. Si votre budget est limité, dites-le franchement — on trouvera une solution. Le devis est toujours gratuit."},
+  {q:"Où voir des exemples de réalisations ?",a:"Consultez notre portfolio sur akafolio160502.vercel.app ou directement dans la section Réalisations : ShopCI (e-commerce), TechFlow (vitrine), TerraSafe (SaaS) et d'autres encore."},
 ]
 
 function FAQ() {
   const [open,setOpen]=useState(null)
   const ref=useRef(null); const inView=useInView(ref,{once:true,margin:'-60px'})
+  const T=useTheme()
   return (
-    <section id="faq" ref={ref} style={{padding:'7rem 5%',background:'var(--dark1)',position:'relative'}}>
+    <section id="faq" ref={ref} style={{padding:'7rem 5%',background:T.bg,position:'relative'}}>
       <div className="grid-bg" style={{position:'absolute',inset:0,opacity:.3}}/>
       <div style={{maxWidth:800,margin:'0 auto',position:'relative',zIndex:1}}>
         <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} style={{textAlign:'center',marginBottom:'3.5rem'}}>
           <SectionEye label="// FAQ" ghost="FAQ" center/>
-          <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
-            Questions <span style={{color:'#22c864'}}>fréquentes</span>
+          <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:T.textMain,letterSpacing:'-.03em'}}>
+            Vos questions, <span style={{color:T.green}}>nos réponses.</span>
           </h2>
+          <p style={{marginTop:'.8rem',fontSize:'.9rem',color:T.textMuted}}>Encore des doutes ? On répond à tout. Et si votre question n'est pas là, écrivez-nous sur WhatsApp.</p>
         </motion.div>
         <div style={{display:'flex',flexDirection:'column',gap:'.8rem'}}>
           {FAQ_D.map((item,i)=>(
             <motion.div key={i} className="sku-card" initial={{opacity:0,y:14}} animate={inView?{opacity:1,y:0}:{}} transition={{delay:i*.06}}
-              style={{overflow:'hidden',border:open===i?'1px solid rgba(34,200,100,.3)':'1px solid var(--border)',transition:'all .22s'}}
+              style={{overflow:'hidden',border:open===i?`1px solid ${T.border2}`:`1px solid ${T.border}`,transition:'all .22s'}}
             >
               <button onClick={()=>setOpen(open===i?null:i)} className="faq-btn" style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'1rem',padding:'1.2rem 1.5rem',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
-                <span style={{fontSize:'.92rem',fontWeight:700,color:'#fff',fontFamily:"'Syne',sans-serif"}}>{item.q}</span>
-                <motion.span animate={{rotate:open===i?45:0}} transition={{duration:.22}} style={{flexShrink:0,width:24,height:24,borderRadius:'50%',border:'1px solid rgba(34,200,100,.3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                  <ChevronRight size={14} style={{color:'#22c864'}}/>
+                <span className="faq-question" style={{fontSize:'.92rem',fontWeight:700,fontFamily:"'Syne',sans-serif"}}>{item.q}</span>
+                <motion.span animate={{rotate:open===i?45:0}} transition={{duration:.22}} style={{flexShrink:0,width:24,height:24,borderRadius:'50%',border:`1px solid ${T.border2}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <ChevronRight size={14} style={{color:T.green}}/>
                 </motion.span>
               </button>
               <AnimatePresence initial={false}>
                 {open===i&&(
                   <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} transition={{duration:.25}}>
-                    <div style={{padding:'0 1.5rem 1.2rem',borderTop:'1px solid rgba(34,200,100,.07)',paddingTop:'.9rem',fontSize:'.84rem',color:'rgba(255,255,255,.5)',lineHeight:1.7}}>{item.a}</div>
+                    <div className="faq-answer" style={{padding:'0 1.5rem 1.2rem',borderTop:`1px solid ${T.border}`,paddingTop:'.9rem',fontSize:'.84rem',lineHeight:1.7}}>{item.a}</div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -2058,7 +2284,6 @@ function FAQ() {
 }
 
 // ── CONTACT ───────────────────────────────────────────────────
-const iStyle={width:'100%',maxWidth:'100%',boxSizing:'border-box',display:'block',background:'linear-gradient(145deg,var(--card),var(--card2))',border:'1px solid rgba(34,200,100,.15)',borderRadius:10,padding:'.8rem 1.1rem',color:'rgba(255,255,255,.85)',fontFamily:"'Syne',sans-serif",fontSize:'.88rem',outline:'none',boxShadow:'inset 3px 3px 8px rgba(0,0,0,.4),inset -1px -1px 5px rgba(34,200,100,.06)',transition:'border-color .2s'}
 
 const SOCIAL_LINKS=[
   {icon:MessageCircle,href:'https://wa.me/2250142507750',label:'WhatsApp',sub:'+225 01 42 50 77 50',color:'#25D366'},
@@ -2073,6 +2298,7 @@ const CONTACT_STATS=[
 
 function Contact() {
   const ref=useRef(null); const inView=useInView(ref,{once:true,margin:'-60px'})
+  const T=useTheme()
   const [form,setForm]=useState({name:'',email:'',type:'',message:''})
   const [sent,setSent]=useState(false)
   const onChange=e=>setForm(f=>({...f,[e.target.id]:e.target.value}))
@@ -2081,190 +2307,127 @@ function Contact() {
     const txt=encodeURIComponent(`Bonjour AKATech !\n\nNom: ${name}\nEmail: ${email}\nProjet: ${type}\n\nMessage:\n${message}`)
     window.open(`https://wa.me/2250142507750?text=${txt}`,'_blank'); setSent(true)
   }
-
-  // Style des champs — box-sizing forcé
   const field={
     width:'100%', maxWidth:'100%', boxSizing:'border-box', display:'block',
-    background:'linear-gradient(145deg,var(--card),var(--card2))',
-    border:'1px solid rgba(34,200,100,.15)', borderRadius:10,
-    padding:'.8rem 1rem', color:'rgba(255,255,255,.85)',
+    background: T.light ? '#f5f5f5' : 'rgba(11,26,16,.9)',
+    border:`1px solid ${T.border}`, borderRadius:10,
+    padding:'.8rem 1rem', color:T.inputColor,
     fontFamily:"'Syne',sans-serif", fontSize:'.88rem',
     outline:'none', transition:'border-color .2s',
   }
-
   return (
-    <section id="contact" ref={ref} style={{
-      padding:'5rem 4%', background:'var(--dark2)',
-      position:'relative', overflow:'hidden',
-      boxSizing:'border-box', width:'100%',
-    }}>
-      {/* Orbs décoratifs */}
-      <div style={{position:'absolute',right:'-10%',top:'5%',width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 60%)',pointerEvents:'none'}}/>
-      <div style={{position:'absolute',left:'-8%',bottom:'5%',width:300,height:300,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.04),transparent 60%)',pointerEvents:'none'}}/>
-
+    <section id="contact" ref={ref} style={{padding:'5rem 4%',background:T.bgAlt,position:'relative',overflow:'hidden',boxSizing:'border-box',width:'100%'}}>
       <div style={{maxWidth:1100,margin:'0 auto',width:'100%',boxSizing:'border-box',position:'relative',zIndex:1}}>
-
-        {/* Header */}
-        <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}}
-          style={{textAlign:'center',marginBottom:'3rem'}}>
+        <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} style={{textAlign:'center',marginBottom:'3rem'}}>
           <SectionEye label="// Contact" ghost="CONTACT" center/>
-          <h2 style={{fontSize:'clamp(1.6rem,4vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
-            Transformons votre idée <span style={{color:'#22c864'}}>en réalité</span>
+          <h2 style={{fontSize:'clamp(1.6rem,4vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:T.textMain,letterSpacing:'-.03em'}}>
+            Parlons de votre projet. <span style={{color:T.green}}>C'est gratuit.</span>
           </h2>
-          <p style={{marginTop:'.7rem',fontSize:'.9rem',color:'rgba(255,255,255,.4)'}}>Décrivez votre projet — je réponds sous 24h.</p>
+          <p style={{marginTop:'.7rem',fontSize:'.9rem',color:T.textMuted}}>Décrivez votre idée en quelques lignes — je vous réponds personnellement sous 24h avec un devis clair.</p>
         </motion.div>
-
-        {/* Layout : grille desktop / pile mobile */}
         <div className="ctt-grid">
-
-          {/* ── COLONNE FORMULAIRE (order:1 mobile) ── */}
-          <motion.div className="ctt-form-col"
-            initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.5}}>
-            <div style={{
-              background:'linear-gradient(145deg,var(--card2),var(--card))',
-              border:'1px solid rgba(34,200,100,.15)',
-              borderRadius:18, padding:'1.8rem',
-              boxSizing:'border-box', width:'100%', overflow:'hidden',
-              boxShadow:'var(--skeu-shadow)',
-            }}>
-              {/* Titre formulaire */}
+          {/* Formulaire */}
+          <motion.div className="ctt-form-col" initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.5}}>
+            <div style={{background:T.bgCard,border:`1px solid ${T.border}`,borderRadius:18,padding:'1.8rem',boxSizing:'border-box',width:'100%',overflow:'hidden',boxShadow:T.light?'0 2px 16px rgba(0,0,0,.07)':'var(--skeu-shadow)'}}>
               <div style={{display:'flex',alignItems:'center',gap:'.7rem',marginBottom:'1.4rem'}}>
-                <div style={{width:36,height:36,borderRadius:9,background:'rgba(34,200,100,.1)',border:'1px solid rgba(34,200,100,.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <Send size={16} style={{color:'#22c864'}}/>
+                <div style={{width:36,height:36,borderRadius:9,background:`rgba(34,200,100,.1)`,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <Send size={16} style={{color:T.green}}/>
                 </div>
-                <h3 style={{fontSize:'1rem',fontWeight:800,color:'#fff',fontFamily:"'Syne',sans-serif",lineHeight:1.2}}>Envoyez-moi un message</h3>
+                <h3 style={{fontSize:'1rem',fontWeight:800,fontFamily:"'Syne',sans-serif",lineHeight:1.2,color:T.textMain}}>Envoyez-moi un message</h3>
               </div>
-
               {sent ? (
                 <motion.div initial={{opacity:0,scale:.95}} animate={{opacity:1,scale:1}}
-                  style={{textAlign:'center',padding:'2rem',background:'rgba(34,200,100,.05)',border:'1px solid rgba(34,200,100,.2)',borderRadius:14,color:'#22c864',fontWeight:700}}>
-                  <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(34,200,100,.1)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto .9rem'}}>
-                    <Check size={24} style={{color:'#22c864'}}/>
+                  style={{textAlign:'center',padding:'2rem',background:`rgba(34,200,100,.05)`,border:`1px solid ${T.border}`,borderRadius:14,color:T.green,fontWeight:700}}>
+                  <div style={{width:52,height:52,borderRadius:'50%',background:`rgba(34,200,100,.1)`,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto .9rem'}}>
+                    <Check size={24} style={{color:T.green}}/>
                   </div>
-                  <div style={{fontSize:'.95rem',marginBottom:'.35rem'}}>Message envoyé !</div>
-                  <div style={{fontSize:'.78rem',fontWeight:400,color:'rgba(255,255,255,.4)'}}>Réponse dans moins de 24h.</div>
+                  <div style={{fontSize:'.95rem',marginBottom:'.35rem',color:T.green}}>Message envoyé !</div>
+                  <div style={{fontSize:'.78rem',fontWeight:400,color:T.textMuted}}>Réponse dans moins de 24h.</div>
                 </motion.div>
               ) : (
                 <form onSubmit={onSubmit} style={{display:'flex',flexDirection:'column',gap:'.9rem',width:'100%',boxSizing:'border-box'}}>
-
-                  {/* Nom + Email — 2 colonnes desktop, 1 col mobile */}
                   <div className="ctt-row">
                     <div className="ctt-field">
                       <label className="ctt-label">Nom *</label>
-                      <input id="name" type="text" placeholder="Kouassi Jean"
-                        value={form.name} onChange={onChange} required style={field}
-                        onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.5)'}
-                        onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
+                      <input id="name" type="text" placeholder="Kouassi Jean" value={form.name} onChange={onChange} required style={field} onFocus={e=>e.target.style.borderColor=T.green} onBlur={e=>e.target.style.borderColor=T.border}/>
                     </div>
                     <div className="ctt-field">
                       <label className="ctt-label">Email *</label>
-                      <input id="email" type="email" placeholder="jean@email.com"
-                        value={form.email} onChange={onChange} required style={field}
-                        onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.5)'}
-                        onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
+                      <input id="email" type="email" placeholder="jean@email.com" value={form.email} onChange={onChange} required style={field} onFocus={e=>e.target.style.borderColor=T.green} onBlur={e=>e.target.style.borderColor=T.border}/>
                     </div>
                   </div>
-
-                  {/* Type de projet */}
                   <div className="ctt-field">
                     <label className="ctt-label">Type de projet *</label>
                     <select id="type" value={form.type} onChange={onChange} required
-                      style={{...field,
-                        backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2322c864' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\")",
-                        backgroundRepeat:'no-repeat', backgroundPosition:'right 1rem center',
-                        appearance:'none', colorScheme:'dark',
-                      }}
-                      onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.5)'}
-                      onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}>
-                      <option value="" style={{background:'#030806',color:'#fff'}}>Sélectionnez…</option>
+                      style={{...field,backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2322c864' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\")",backgroundRepeat:'no-repeat',backgroundPosition:'right 1rem center',appearance:'none',colorScheme:T.light?'light':'dark'}}
+                      onFocus={e=>e.target.style.borderColor=T.green} onBlur={e=>e.target.style.borderColor=T.border}>
+                      <option value="">Sélectionnez…</option>
                       {['Site Vitrine','E-commerce','Application SaaS','Portfolio','API / Backend','Maintenance','Autre'].map(o=>(
-                        <option key={o} style={{background:'#030806',color:'#fff'}}>{o}</option>
+                        <option key={o}>{o}</option>
                       ))}
                     </select>
                   </div>
-
-                  {/* Message */}
                   <div className="ctt-field">
                     <label className="ctt-label">Message *</label>
-                    <textarea id="message" rows={4} placeholder="Décrivez votre projet…"
-                      value={form.message} onChange={onChange} required
-                      style={{...field,resize:'vertical',minHeight:100}}
-                      onFocus={e=>e.target.style.borderColor='rgba(34,200,100,.5)'}
-                      onBlur={e=>e.target.style.borderColor='rgba(34,200,100,.15)'}/>
+                    <textarea id="message" rows={4} placeholder="Décrivez votre projet…" value={form.message} onChange={onChange} required style={{...field,resize:'vertical',minHeight:100}} onFocus={e=>e.target.style.borderColor=T.green} onBlur={e=>e.target.style.borderColor=T.border}/>
                   </div>
-
-                  <button type="submit" className="btn-raised"
-                    style={{justifyContent:'center',width:'100%',padding:'1rem',borderRadius:12,fontSize:'.9rem',boxSizing:'border-box'}}>
+                  <button type="submit" className="btn-raised" style={{justifyContent:'center',width:'100%',padding:'1rem',borderRadius:12,fontSize:'.9rem',boxSizing:'border-box'}}>
                     <Send size={15}/>Envoyer le message
                   </button>
-
-                  <p style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.35rem',fontSize:'.62rem',color:'rgba(255,255,255,.2)',textAlign:'center'}}>
-                    <ShieldCheck size={10} style={{color:'rgba(34,200,100,.3)',flexShrink:0}}/>
-                    Données sécurisées, jamais partagées.
+                  <p style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.35rem',fontSize:'.62rem',color:T.textMuted,textAlign:'center'}}>
+                    <ShieldCheck size={10} style={{color:T.green,flexShrink:0}}/>Données sécurisées, jamais partagées.
                   </p>
                 </form>
               )}
             </div>
           </motion.div>
 
-          {/* ── COLONNE INFOS (order:2 mobile) ── */}
-          <motion.div className="ctt-info-col"
-            initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.5,delay:.1}}>
-
-            {/* Badge disponible */}
+          {/* Infos */}
+          <motion.div className="ctt-info-col" initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:.5,delay:.1}}>
             <div className="sku-card" style={{padding:'1rem 1.2rem',display:'flex',alignItems:'center',gap:'.8rem',marginBottom:'.9rem'}}>
               <div style={{position:'relative',flexShrink:0}}>
-                <div style={{width:9,height:9,borderRadius:'50%',background:'#22c864'}}/>
-                <div style={{position:'absolute',inset:-3,borderRadius:'50%',border:'1.5px solid #22c864',animation:'pulse-ring 1.8s ease-out infinite'}}/>
+                <div style={{width:9,height:9,borderRadius:'50%',background:T.green}}/>
+                <div style={{position:'absolute',inset:-3,borderRadius:'50%',border:`1.5px solid ${T.green}`,animation:'pulse-ring 1.8s ease-out infinite'}}/>
               </div>
-              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.68rem',color:'rgba(34,200,100,.75)',letterSpacing:'.05em'}}>Disponible pour de nouveaux projets</span>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.68rem',color:T.greenSub,letterSpacing:'.05em'}}>Disponible pour de nouveaux projets</span>
             </div>
-
-            {/* Stats */}
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'.6rem',marginBottom:'.9rem'}}>
               {CONTACT_STATS.map(({icon:Icon,val,label})=>(
                 <div key={label} className="sku-card" style={{padding:'.9rem .6rem',textAlign:'center'}}>
-                  <Icon size={15} style={{color:'#22c864',margin:'0 auto .3rem'}}/>
-                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:'.95rem',fontWeight:900,color:'#fff',lineHeight:1}}>{val}</div>
-                  <div style={{fontSize:'.52rem',color:'rgba(255,255,255,.35)',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',fontFamily:"'JetBrains Mono',monospace"}}>{label}</div>
+                  <Icon size={15} style={{color:T.green,margin:'0 auto .3rem'}}/>
+                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:'.95rem',fontWeight:900,lineHeight:1,color:T.textMain}}>{val}</div>
+                  <div style={{fontSize:'.52rem',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',fontFamily:"'JetBrains Mono',monospace",color:T.textMuted}}>{label}</div>
                 </div>
               ))}
             </div>
-
-            {/* Liens sociaux */}
             <div className="sku-card" style={{padding:'1.2rem',marginBottom:'.9rem'}}>
-              <div style={{fontSize:'.58rem',fontWeight:700,color:'rgba(255,255,255,.3)',textTransform:'uppercase',letterSpacing:'.12em',fontFamily:"'JetBrains Mono',monospace",marginBottom:'.7rem'}}>Me retrouver sur</div>
+              <div style={{fontSize:'.58rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.12em',fontFamily:"'JetBrains Mono',monospace",marginBottom:'.7rem',color:T.textMuted}}>Me retrouver sur</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'.5rem'}}>
                 {SOCIAL_LINKS.map(({icon:Icon,href,label,sub,color})=>(
                   <a key={label} href={href} target="_blank" rel="noreferrer"
-                    style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.6rem .8rem',borderRadius:10,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)',textDecoration:'none',transition:'all .2s',minWidth:0}}
+                    style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.6rem .8rem',borderRadius:10,background:T.light?'rgba(0,0,0,.03)':'rgba(255,255,255,.03)',border:`1px solid ${T.border}`,textDecoration:'none',transition:'all .2s',minWidth:0}}
                     onMouseEnter={e=>{e.currentTarget.style.background=`${color}15`;e.currentTarget.style.borderColor=`${color}40`}}
-                    onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,.03)';e.currentTarget.style.borderColor='rgba(255,255,255,.06)'}}>
-                    <div className="social-icon-wrap" style={{width:28,height:28,borderRadius:7,background:`${color}18`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    onMouseLeave={e=>{e.currentTarget.style.background=T.light?'rgba(0,0,0,.03)':'rgba(255,255,255,.03)';e.currentTarget.style.borderColor=T.border}}>
+                    <div style={{width:28,height:28,borderRadius:7,background:`${color}18`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <Icon size={13} style={{color}}/>
                     </div>
                     <div style={{minWidth:0,overflow:'hidden'}}>
-                      <div style={{fontSize:'.68rem',fontWeight:700,color:'#fff',fontFamily:"'Syne',sans-serif",lineHeight:1.2}}>{label}</div>
-                      <div style={{fontSize:'.55rem',color:'rgba(255,255,255,.3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{sub}</div>
+                      <div style={{fontSize:'.68rem',fontWeight:700,fontFamily:"'Syne',sans-serif",lineHeight:1.2,color:T.textMain}}>{label}</div>
+                      <div style={{fontSize:'.55rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:T.textMuted}}>{sub}</div>
                     </div>
                   </a>
                 ))}
               </div>
             </div>
-
-            {/* WhatsApp CTA */}
             <a href="https://wa.me/2250142507750?text=Bonjour+AKATech+!" target="_blank" rel="noreferrer"
               className="btn-raised" style={{justifyContent:'center',padding:'.9rem',width:'100%',borderRadius:12,fontSize:'.85rem',marginBottom:'.9rem',display:'flex',boxSizing:'border-box'}}>
               <MessageCircle size={16}/>Démarrer sur WhatsApp
             </a>
-
-            {/* Localisation */}
-            <div style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.65rem .9rem',borderRadius:10,background:'rgba(34,200,100,.04)',border:'1px solid rgba(34,200,100,.1)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:'.5rem',padding:'.65rem .9rem',borderRadius:10,background:`rgba(34,200,100,.04)`,border:`1px solid ${T.border}`}}>
               <MapPin size={13} style={{color:'#ea4335',flexShrink:0}}/>
-              <span style={{fontSize:'.72rem',color:'rgba(255,255,255,.4)',fontFamily:"'JetBrains Mono',monospace"}}>Abidjan, Côte d'Ivoire</span>
+              <span style={{fontSize:'.72rem',fontFamily:"'JetBrains Mono',monospace",color:T.textMuted}}>Abidjan, Côte d'Ivoire</span>
             </div>
           </motion.div>
-
         </div>
       </div>
     </section>
@@ -2290,7 +2453,6 @@ const FOOTER_NAV=[
   {label:'Contact',        href:'#contact'},
 ]
 const FOOTER_CONTACT=[
-
   {icon:MessageCircle, label:'+225 01 42 50 77 50',    href:'https://wa.me/2250142507750'},
   {icon:Phone,         label:'+225 01 70 92 76 39',    href:'tel:+2250170927639'},
   {icon:MapPin,        label:"Abidjan, Côte d'Ivoire", href:null},
@@ -2298,94 +2460,83 @@ const FOOTER_CONTACT=[
 
 function Footer() {
   const year=new Date().getFullYear()
-  const lk={fontSize:'.78rem',color:'rgba(255,255,255,.28)',transition:'color .22s',lineHeight:1.75,display:'flex',alignItems:'center',gap:'.45rem',textDecoration:'none'}
-  const onH=(e,in_)=>{ e.currentTarget.style.color=in_?'#66ffaa':'rgba(255,255,255,.28)' }
+  const T=useTheme()
+  const lk={fontSize:'.78rem',color:T.textMuted,transition:'color .22s',lineHeight:1.75,display:'flex',alignItems:'center',gap:'.45rem',textDecoration:'none'}
+  const onH=(e,in_)=>{ e.currentTarget.style.color=in_?T.green:T.textMuted }
   return (
-    <footer style={{background:'#020504',paddingTop:'4rem',borderTop:'1px solid rgba(34,200,100,.08)'}}>
+    <footer style={{background:T.light?'#f3f3f3':'#020504',paddingTop:'4rem',borderTop:`1px solid ${T.border}`}}>
       <div style={{maxWidth:1200,margin:'0 auto',padding:'0 5%'}}>
-        <div className="footer-grid" style={{paddingBottom:'3rem',borderBottom:'1px solid rgba(34,200,100,.07)'}}>
-
-          {/* Brand */}
+        <div className="footer-grid" style={{paddingBottom:'3rem',borderBottom:`1px solid ${T.border}`}}>
           <div>
             <div style={{marginBottom:'1.2rem'}}><Logo size={28} animate={false} showTag={false}/></div>
-            <p style={{fontSize:'.82rem',lineHeight:1.7,color:'rgba(255,255,255,.28)',maxWidth:260,marginBottom:'1.5rem'}}>
+            <p style={{fontSize:'.82rem',lineHeight:1.7,color:T.textMuted,maxWidth:260,marginBottom:'1.5rem'}}>
               Agence de solutions web basée à Abidjan. Sites vitrines, e-commerce, SaaS et portfolios modernes, rapides et rentables.
             </p>
             <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
               {[
-                
                 {icon:Facebook,    href:'https://web.facebook.com/profile.php?id=61577494705852', title:'Facebook'},
                 {icon:MessageCircle,href:'https://wa.me/2250142507750',                           title:'WhatsApp'},
                 {icon:Mail,        href:'mailto:wthomasss06@gmail.com',                           title:'Email'},
               ].map(({icon:Icon,href,title})=>(
                 <a key={title} href={href} target={href.startsWith('http')?'_blank':undefined} rel="noreferrer" title={title}
-                  style={{width:34,height:34,borderRadius:8,background:'rgba(34,200,100,.05)',border:'1px solid rgba(34,200,100,.1)',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(255,255,255,.3)',transition:'all .2s'}}
-                  onMouseEnter={e=>{e.currentTarget.style.background='#22c864';e.currentTarget.style.borderColor='#22c864';e.currentTarget.style.color='#fff'}}
-                  onMouseLeave={e=>{e.currentTarget.style.background='rgba(34,200,100,.05)';e.currentTarget.style.borderColor='rgba(34,200,100,.1)';e.currentTarget.style.color='rgba(255,255,255,.3)'}}
+                  style={{width:34,height:34,borderRadius:8,background:T.light?'rgba(0,0,0,.05)':'rgba(34,200,100,.05)',border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',color:T.textMuted,transition:'all .2s'}}
+                  onMouseEnter={e=>{e.currentTarget.style.background=T.green;e.currentTarget.style.borderColor=T.green;e.currentTarget.style.color='#fff'}}
+                  onMouseLeave={e=>{e.currentTarget.style.background=T.light?'rgba(0,0,0,.05)':'rgba(34,200,100,.05)';e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.textMuted}}
                 ><Icon size={14}/></a>
               ))}
             </div>
           </div>
-
-          {/* Services */}
           <div>
-            <div style={{fontSize:'.68rem',fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:'.12em',marginBottom:'1.1rem',fontFamily:"'JetBrains Mono',monospace"}}>Services</div>
+            <div style={{fontSize:'.68rem',fontWeight:700,color:T.textSub,textTransform:'uppercase',letterSpacing:'.12em',marginBottom:'1.1rem',fontFamily:"'JetBrains Mono',monospace"}}>Services</div>
             <div style={{display:'flex',flexDirection:'column',gap:'.15rem'}}>
               {FOOTER_SERVICES.map(({label,href})=>(
                 <a key={label} href={href} className="footer-link" style={lk} onMouseEnter={e=>onH(e,true)} onMouseLeave={e=>onH(e,false)}>
-                  <ChevronRight size={10} style={{color:'rgba(34,200,100,.25)',flexShrink:0}}/>{label}
+                  <ChevronRight size={10} style={{color:T.greenSub,flexShrink:0}}/>{label}
                 </a>
               ))}
             </div>
           </div>
-
-          {/* Navigation */}
           <div>
-            <div style={{fontSize:'.68rem',fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:'.12em',marginBottom:'1.1rem',fontFamily:"'JetBrains Mono',monospace"}}>Navigation</div>
+            <div style={{fontSize:'.68rem',fontWeight:700,color:T.textSub,textTransform:'uppercase',letterSpacing:'.12em',marginBottom:'1.1rem',fontFamily:"'JetBrains Mono',monospace"}}>Navigation</div>
             <div style={{display:'flex',flexDirection:'column',gap:'.15rem'}}>
               {FOOTER_NAV.map(({label,href})=>(
                 <a key={label} href={href} className="footer-link" style={lk} onMouseEnter={e=>onH(e,true)} onMouseLeave={e=>onH(e,false)}>
-                  <ChevronRight size={10} style={{color:'rgba(34,200,100,.25)',flexShrink:0}}/>{label}
+                  <ChevronRight size={10} style={{color:T.greenSub,flexShrink:0}}/>{label}
                 </a>
               ))}
               <a href="https://akafolio160502.vercel.app/" target="_blank" rel="noreferrer"
-                style={{...lk,color:'rgba(34,200,100,.45)',marginTop:'.4rem'}}
-                onMouseEnter={e=>onH(e,true)} onMouseLeave={e=>{e.currentTarget.style.color='rgba(34,200,100,.45)'}}>
+                style={{...lk,color:T.greenSub,marginTop:'.4rem'}}
+                onMouseEnter={e=>{e.currentTarget.style.color=T.green}} onMouseLeave={e=>{e.currentTarget.style.color=T.greenSub}}>
                 <ExternalLink size={10} style={{flexShrink:0}}/>Portfolio complet
               </a>
             </div>
           </div>
-
-          {/* Contact */}
           <div>
-            <div style={{fontSize:'.68rem',fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:'.12em',marginBottom:'1.1rem',fontFamily:"'JetBrains Mono',monospace"}}>Contact</div>
+            <div style={{fontSize:'.68rem',fontWeight:700,color:T.textSub,textTransform:'uppercase',letterSpacing:'.12em',marginBottom:'1.1rem',fontFamily:"'JetBrains Mono',monospace"}}>Contact</div>
             <div style={{display:'flex',flexDirection:'column',gap:'.25rem'}}>
               {FOOTER_CONTACT.map(({icon:Icon,label,href})=>
                 href?(
                   <a key={label} href={href} target={href.startsWith('http')?'_blank':undefined} rel="noreferrer"
                     style={lk} onMouseEnter={e=>onH(e,true)} onMouseLeave={e=>onH(e,false)}>
-                    <Icon size={12} style={{color:'#22c864',flexShrink:0}}/>{label}
+                    <Icon size={12} style={{color:T.green,flexShrink:0}}/>{label}
                   </a>
                 ):(
                   <span key={label} style={{...lk,cursor:'default'}}>
-                    <Icon size={12} style={{color:'#22c864',flexShrink:0}}/>{label}
+                    <Icon size={12} style={{color:T.green,flexShrink:0}}/>{label}
                   </span>
                 )
               )}
             </div>
           </div>
         </div>
-
-        {/* Bottom bar */}
-        <div style={{display:'flex',justifyContent:'center',alignItems:'center',padding:'1.4rem 0',fontSize:'.7rem',color:'rgba(255,255,255,.18)',flexWrap:'wrap',gap:'.5rem'}}>
-          <p>
+        <div style={{display:'flex',justifyContent:'center',alignItems:'center',padding:'1.4rem 0',fontSize:'.7rem',color:T.textMuted,flexWrap:'wrap',gap:'.5rem'}}>
+          <p style={{textAlign:'center',width:'100%'}}>
             © {year}{' '}
-            <a href="#accueil" style={{color:'rgba(34,200,100,.45)',transition:'color .2s'}}
-               onMouseEnter={e=>e.currentTarget.style.color='#66ffaa'}
-               onMouseLeave={e=>e.currentTarget.style.color='rgba(34,200,100,.45)'}>AKATech</a>
-            {' '}· Agence · Abidjan
+            <a href="#accueil" style={{color:T.greenSub,transition:'color .2s'}}
+               onMouseEnter={e=>e.currentTarget.style.color=T.green}
+               onMouseLeave={e=>e.currentTarget.style.color=T.greenSub}>AKATech</a>
+            {' '}
           </p>
-          
         </div>
       </div>
     </footer>
@@ -2476,7 +2627,7 @@ function FloatingWA() {
 export default function App() {
   const [loaded,setLoaded]=useState(false)
   return (
-    <>
+    <ThemeProvider>
       <GlobalStyles/>
       <MicroCursor/>
       <Loader onDone={()=>setLoaded(true)}/>
@@ -2502,6 +2653,6 @@ export default function App() {
           <BackToTop/>
         </motion.div>
       )}
-    </>
+    </ThemeProvider>
   )
 }
