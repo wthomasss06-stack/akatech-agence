@@ -30,11 +30,59 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-heading);
-  color: var(--text);
-  background: #fff;
+  color: rgba(255,255,255,.85);
+  background: #030806;
   overflow-x: hidden;
   line-height: 1.7;
 }
+
+/* ── LIGHT MODE ── */
+body.light-mode {
+  color: #111111;
+  background: #ffffff;
+}
+
+/* En mode clair, toutes les sections sombres deviennent blanches/grises */
+body.light-mode section,
+body.light-mode footer,
+body.light-mode header { color: #111111; }
+
+/* Textes qui étaient blancs hardcodés → noirs en mode clair */
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4,
+body.light-mode p { color: inherit; }
+
+/* Cards blanches */
+body.light-mode .sku-card,
+body.light-mode [class*="card"] {
+  background: #ffffff !important;
+  border-color: rgba(0,0,0,.09) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,.07) !important;
+}
+
+/* Sections à fond sombre → fond gris très clair */
+body.light-mode [style*="background:'#030806'"],
+body.light-mode [style*="background: '#030806'"],
+body.light-mode [style*="background:var(--dark"] {
+  background: #f8f8f8 !important;
+}
+
+/* Bouton ghost → contour vert, texte vert */
+body.light-mode .btn-ghost {
+  background: transparent !important;
+  color: #16a34a !important;
+  border-color: rgba(22,163,74,.4) !important;
+  box-shadow: none !important;
+}
+
+/* Marquee strip */
+body.light-mode .marquee-item { color: rgba(0,0,0,.45) !important; }
+
+/* Scrollbar */
+body.light-mode::-webkit-scrollbar-track { background: #f0f0f0; }
+body.light-mode::-webkit-scrollbar-thumb { background: #16a34a; }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--off); }
