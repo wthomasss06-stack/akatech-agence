@@ -18,6 +18,55 @@ import {
   User, BadgeCheck,
 } from 'lucide-react'
 
+// ── PERFORMANCE : LAZY IMAGE ──────────────────────────────────
+// Intersection Observer — charge l'image seulement quand visible
+function LazyImg({ src, alt, style, className, onError, placeholder }) {
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError]   = useState(false)
+  const [visible, setVisible] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!ref.current) return
+    // Browsers qui supportent native lazy (fallback immédiat)
+    if ('loading' in HTMLImageElement.prototype) { setVisible(true); return }
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { rootMargin: '200px' }
+    )
+    obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [])
+
+  const handleError = (e) => { setError(true); onError?.(e) }
+
+  return (
+    <div ref={ref} style={{ position:'relative', width:'100%', height:'100%', overflow:'hidden', ...(!loaded && !error ? { background:'linear-gradient(135deg,#0a1a0e,#060e09)' } : {}) }}>
+      {/* Shimmer skeleton pendant le chargement */}
+      {!loaded && !error && visible && (
+        <div style={{
+          position:'absolute', inset:0,
+          background:'linear-gradient(90deg,#0a1a0e 0%,#0e2416 40%,#0a1a0e 80%)',
+          backgroundSize:'200% 100%',
+          animation:'shimmer 1.6s ease-in-out infinite',
+        }}/>
+      )}
+      {visible && !error && (
+        <img
+          src={src} alt={alt || ''}
+          loading="lazy"
+          decoding="async"
+          className={className}
+          style={{ ...style, opacity: loaded ? 1 : 0, transition:'opacity .4s ease' }}
+          onLoad={() => setLoaded(true)}
+          onError={handleError}
+        />
+      )}
+      {error && placeholder}
+    </div>
+  )
+}
+
 // ── GLOBAL STYLES INJECTION ──────────────────────────────────
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;600&family=Orbitron:wght@700;900&display=swap');
@@ -291,7 +340,10 @@ const GLOBAL_CSS = `
 
   /* ── MOBILE 768px ── */
   @media(max-width:768px){
+    /* Force contact single column on mobile — override inline style */
     .contact-grid   { grid-template-columns:1fr; }
+    .contact-left-mobile  { order:2 !important; }
+    .contact-right-mobile { order:1 !important; }
     .form-row       { grid-template-columns:1fr 1fr; gap:.7rem; }
     .trust-grid     { grid-template-columns:repeat(2,1fr); }
     .footer-grid    { grid-template-columns:1fr 1fr; }
@@ -334,9 +386,6 @@ const GLOBAL_CSS = `
     /* Pricing tabs scroll horiz */
     .pricing-tabs { flex-wrap:nowrap !important; overflow-x:auto !important; justify-content:flex-start !important; padding-bottom:.3rem; scrollbar-width:none; }
     .pricing-tabs::-webkit-scrollbar { display:none; }
-    /* Contact: form first on mobile */
-    .contact-left-mobile  { order:2 !important; }
-    .contact-right-mobile { order:1 !important; }
   }
 
   /* ── MOBILE 480px ── */
@@ -353,6 +402,15 @@ const GLOBAL_CSS = `
     .svc-scroll > * { min-width:88vw !important; }
     .proc-scroll > * { min-width:78vw !important; }
     .pricing-mobile-scroll > * { min-width:88vw !important; }
+  }
+
+  /* ── SCROLL HINT INDICATOR ── */
+  @keyframes scroll-hint-arrow {
+    0%,100% { opacity:.3; transform:translateX(0); }
+    50%      { opacity:1;  transform:translateX(2px); }
+  }
+  @media(max-width:768px) {
+    .scroll-hint-mobile { display:flex !important; }
   }
 
   /* ── HAMBURGER BOTTOM SHEET ── */
@@ -804,7 +862,6 @@ function AnimatedCounter({ target, duration = 1800 }) {
 function About() {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-80px' })
-  const [imgErrs, setImgErrs] = useState({})
 
   // Parallax scroll for photo grid
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
@@ -825,61 +882,40 @@ function About() {
           <motion.div style={{ y: photoY }}>
             <div className="about-photos" style={{ position:'relative' }}>
               {/* Big top-left photo */}
-              <div style={{ gridRow:'1 / 3', gridColumn:'1', borderRadius:16, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.15)', boxShadow:'8px 8px 32px rgba(0,0,0,.6)' }}>
-                {!imgErrs[0] ? (
-                  <motion.img
-                    src={ABOUT_PHOTOS[0].src}
-                    alt={ABOUT_PHOTOS[0].label}
-                    onError={() => setImgErrs(e => ({ ...e, 0: true }))}
-                    whileHover={{ scale: 1.06 }}
-                    transition={{ duration: .5 }}
-                    style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
-                  />
-                ) : (
-                  <div className="img-ph" style={{ height:'100%' }}>
-                    <Users size={32} style={{ opacity:.3 }}/><span>Équipe</span>
-                  </div>
-                )}
-                {/* Overlay badge */}
+              <motion.div whileHover={{ scale:1.03 }} transition={{ duration:.5 }}
+                style={{ gridRow:'1 / 3', gridColumn:'1', borderRadius:16, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.15)', boxShadow:'8px 8px 32px rgba(0,0,0,.6)' }}>
+                <LazyImg src={ABOUT_PHOTOS[0].src} alt={ABOUT_PHOTOS[0].label}
+                  style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
+                  placeholder={<div className="img-ph" style={{ height:'100%' }}><Users size={32} style={{ opacity:.3 }}/><span>Équipe</span></div>}
+                />
                 <div style={{ position:'absolute', bottom:'.8rem', left:'.8rem', padding:'.3rem .85rem', borderRadius:100, background:'rgba(34,200,100,.18)', backdropFilter:'blur(8px)', border:'1px solid rgba(34,200,100,.3)', fontFamily:"'JetBrains Mono',monospace", fontSize:'.58rem', color:'#66ffaa', letterSpacing:'.1em' }}>
                   // AKATech Team
                 </div>
-              </div>
+              </motion.div>
 
               {/* Top-right photo */}
-              <div style={{ borderRadius:14, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.12)', boxShadow:'6px 6px 24px rgba(0,0,0,.5)' }}>
-                {!imgErrs[1] ? (
-                  <motion.img src={ABOUT_PHOTOS[1].src} alt={ABOUT_PHOTOS[1].label}
-                    onError={() => setImgErrs(e => ({ ...e, 1: true }))}
-                    whileHover={{ scale: 1.07 }} transition={{ duration:.5 }}
-                    style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
-                ) : (
-                  <div className="img-ph" style={{ height:'100%' }}>
-                    <Monitor size={28} style={{ opacity:.3 }}/><span>Bureau</span>
-                  </div>
-                )}
-              </div>
+              <motion.div whileHover={{ scale:1.04 }} transition={{ duration:.5 }}
+                style={{ borderRadius:14, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.12)', boxShadow:'6px 6px 24px rgba(0,0,0,.5)' }}>
+                <LazyImg src={ABOUT_PHOTOS[1].src} alt={ABOUT_PHOTOS[1].label}
+                  style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
+                  placeholder={<div className="img-ph" style={{ height:'100%' }}><Monitor size={28} style={{ opacity:.3 }}/><span>Bureau</span></div>}
+                />
+              </motion.div>
 
               {/* Bottom-right photo */}
-              <div style={{ borderRadius:14, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.12)', boxShadow:'6px 6px 24px rgba(0,0,0,.5)' }}>
-                {!imgErrs[2] ? (
-                  <motion.img src={ABOUT_PHOTOS[2].src} alt={ABOUT_PHOTOS[2].label}
-                    onError={() => setImgErrs(e => ({ ...e, 2: true }))}
-                    whileHover={{ scale: 1.07 }} transition={{ duration:.5 }}
-                    style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
-                ) : (
-                  <div className="img-ph" style={{ height:'100%' }}>
-                    <Code size={28} style={{ opacity:.3 }}/><span>Dev</span>
-                  </div>
-                )}
-                {/* Experience badge floating */}
+              <motion.div whileHover={{ scale:1.04 }} transition={{ duration:.5 }}
+                style={{ borderRadius:14, overflow:'hidden', position:'relative', border:'1px solid rgba(34,200,100,.12)', boxShadow:'6px 6px 24px rgba(0,0,0,.5)' }}>
+                <LazyImg src={ABOUT_PHOTOS[2].src} alt={ABOUT_PHOTOS[2].label}
+                  style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
+                  placeholder={<div className="img-ph" style={{ height:'100%' }}><Code size={28} style={{ opacity:.3 }}/><span>Dev</span></div>}
+                />
                 <motion.div
                   initial={{ opacity:0, scale:.6 }} animate={inView ? { opacity:1, scale:1 } : {}} transition={{ delay:.8, type:'spring', stiffness:280, damping:20 }}
                   style={{ position:'absolute', top:'-18px', right:'-10px', width:70, height:70, borderRadius:'50%', background:'linear-gradient(145deg,#27d570,#1aa355)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', boxShadow:'4px 4px 16px rgba(0,0,0,.6), 0 0 24px rgba(34,200,100,.3)', border:'2px solid rgba(255,255,255,.15)' }}>
                   <span style={{ fontFamily:"'Orbitron',sans-serif", fontSize:'.9rem', fontWeight:900, color:'#fff', lineHeight:1 }}>3+</span>
                   <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.42rem', color:'rgba(255,255,255,.8)', letterSpacing:'.06em', textTransform:'uppercase', marginTop:2 }}>Années</span>
                 </motion.div>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
 
@@ -981,6 +1017,36 @@ function About() {
   )
 }
 
+// ── SCROLL HINT (indicateur de swipe horizontal) ─────────────
+function ScrollHint({ label = 'Faites glisser' }) {
+  return (
+    <div className="scroll-hint-mobile" style={{
+      display:'none', // masqué sur desktop, visible via CSS mobile
+      alignItems:'center', justifyContent:'center', gap:'.5rem',
+      marginBottom:'.8rem',
+      fontFamily:"'JetBrains Mono',monospace",
+      fontSize:'.6rem', color:'rgba(34,200,100,.5)',
+      letterSpacing:'.1em', textTransform:'uppercase',
+    }}>
+      {/* Flèche gauche */}
+      <svg width="20" height="12" viewBox="0 0 20 12" fill="none" style={{flexShrink:0}}>
+        <path d="M7 2L2 6L7 10" stroke="#22c864" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{animation:'scroll-hint-arrow 1.4s ease-in-out infinite'}}/>
+        <line x1="2" y1="6" x2="18" y2="6" stroke="rgba(34,200,100,.3)" strokeWidth="1" strokeLinecap="round"/>
+        <path d="M13 2L18 6L13 10" stroke="#22c864" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{animation:'scroll-hint-arrow 1.4s .2s ease-in-out infinite'}}/>
+      </svg>
+      <span>{label}</span>
+      {/* Petits points de pagination */}
+      <div style={{display:'flex', gap:'.3rem', alignItems:'center'}}>
+        {[0,1,2].map(i=>(
+          <div key={i} style={{width: i===0?14:5, height:5, borderRadius:3, background: i===0?'#22c864':'rgba(34,200,100,.25)', transition:'all .3s'}}/>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── SERVICES IMAGE BANNER ────────────────────────────────────
 const SVC_BANNER_IMGS = [
   
@@ -1005,7 +1071,7 @@ function ServicesBanner() {
       {SVC_BANNER_IMGS.map((src, i) => (
         !errs[i] && (
           <div key={i} style={{ position: 'absolute', inset: 0, opacity: i === active ? 1 : 0, transition: 'opacity 1s ease' }}>
-            <img src={src} alt="" onError={() => setErrs(e => ({ ...e, [i]: true }))} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+            <img src={src} alt="" loading="lazy" decoding="async" onError={() => setErrs(e => ({ ...e, [i]: true }))} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(10,26,16,.9) 0%, rgba(10,26,16,.3) 50%, rgba(10,26,16,.7) 100%)' }}/>
           </div>
         )
@@ -1049,6 +1115,7 @@ function Services() {
           </h2>
         </motion.div>
         <ServicesBanner/>
+        <ScrollHint label="Swipe pour voir les services"/>
         <div className="svc-scroll" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(320px,1fr))',gap:'1.2rem'}}>
           {SVCS.map(({icon:Icon,n,title,desc,price,del},i)=>(
             <motion.div key={title} className="sku-card" initial={{opacity:0,y:32,scale:.97}} animate={inView?{opacity:1,y:0,scale:1}:{}} transition={{duration:.55,delay:(i%3)*.12,ease:[.22,1,.36,1]}}
@@ -1246,6 +1313,7 @@ function Process() {
           </h2>
         </motion.div>
 
+        <ScrollHint label="Swipe pour voir les étapes"/>
         <div className="proc-scroll" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))', gap:'1.2rem', position:'relative' }}>
           {/* Connecteur animé */}
           <div className="hidden lg:block proc-connector" style={{ position:'absolute', top:44, left:'12.5%', right:'12.5%', height:1, background:'linear-gradient(90deg,transparent,rgba(34,200,100,.25) 20%,rgba(34,200,100,.25) 80%,transparent)', zIndex:0, pointerEvents:'none' }}/>
@@ -1372,6 +1440,7 @@ function ProjectsCarousel() {
         </div>
 
         {/* Carousel */}
+        <ScrollHint label="Swipe pour voir les projets"/>
         <div style={{overflow:'hidden',cursor:'grab',userSelect:'none'}}
           onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)}
           onMouseDown={e=>onDragStart(e.clientX)}
@@ -1385,11 +1454,14 @@ function ProjectsCarousel() {
               return (
                 <div key={p.id} className="sku-card proj-card" style={{overflow:'hidden',flexShrink:0}}>
                   <div style={{height:180,overflow:'hidden',position:'relative',background:'var(--dark4)'}}>
-                    <img src={p.img} alt={p.title} className="proj-img" style={{width:'100%',height:'100%',objectFit:'cover'}}
-                      onError={e=>{e.currentTarget.style.display='none';e.currentTarget.nextSibling.style.display='flex'}}/>
-                    <div className="img-ph" style={{display:'none',height:180,position:'absolute',inset:0}}>
-                      <Globe size={28} style={{opacity:.3}}/><span>{p.title}</span>
-                    </div>
+                    <LazyImg src={p.img} alt={p.title} className="proj-img"
+                      style={{width:'100%',height:'100%',objectFit:'cover'}}
+                      placeholder={
+                        <div className="img-ph" style={{height:180,position:'absolute',inset:0,display:'flex'}}>
+                          <Globe size={28} style={{opacity:.3}}/><span>{p.title}</span>
+                        </div>
+                      }
+                    />
                     <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(6,14,9,.8),transparent 50%)'}}/>
                     <div style={{position:'absolute',top:'.7rem',left:'.7rem',padding:'.2rem .7rem',borderRadius:4,background:b.bg,color:b.color,fontFamily:"'JetBrains Mono',monospace",fontSize:'.58rem',fontWeight:700,letterSpacing:'.06em'}}>{b.label}</div>
                     {p.premium&&<div style={{position:'absolute',top:'.7rem',right:'.7rem',width:24,height:24,borderRadius:'50%',background:'linear-gradient(135deg,#f59e0b,#f97316)',display:'flex',alignItems:'center',justifyContent:'center'}}><Star size={11} fill="white" color="white"/></div>}
@@ -1468,6 +1540,7 @@ function Pricing() {
           ))}
         </div>
 
+        <ScrollHint label="Swipe pour comparer les offres"/>
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.3}}
             className="pricing-mobile-scroll"
@@ -1506,77 +1579,157 @@ function Pricing() {
 
 // ── TESTIMONIALS CAROUSEL ─────────────────────────────────────
 const TEMOS=[
-  {name:'Tanoh Calvin',role:'Gérant · MEUBLE',project:'Site Vitrine',text:"AKATech a créé notre site en moins d'une semaine. Résultat professionnel, rapide et exactement ce qu'on voulait. On recommande !",img:'/images/clients/client-1.jpg'},
-  {name:'Gnihan Tatiana',role:'Cuisinière dame & Artisane du fil ',project:'Portfolio',text:"Mon portfolio en ligne tourne depuis 3 mois. Les commandes arrivent automatiquement, exactement ce dont on avait besoin.",img:'/images/clients/client-2.jpg'},
-  {name:'Yao Darwell',role:'Graphiste · Designer',project:'Portfolio',text:"Mon portfolio m'a permis d'obtenir 3 nouveaux clients en un mois. Design superbe, animations fluides. AKATech comprend les créatifs.",img:'/images/clients/client-3.jpg'},
+  {name:'Tanoh Calvin',role:'Gérant · MEUBLE CI',project:'Site Vitrine',rating:5,text:"AKATech a créé notre site en moins d'une semaine. Résultat professionnel, rapide et exactement ce qu'on voulait. On recommande sans hésiter !",img:'/images/clients/client-1.jpg',result:'↑ Visibilité x3'},
+  {name:'Gnihan Tatiana',role:'Cuisinière & Artisane du fil',project:'Portfolio',rating:5,text:"Mon portfolio en ligne tourne depuis 3 mois. Les clients me contactent directement depuis le site. Exactement ce dont j'avais besoin.",img:'/images/clients/client-2.jpg',result:'↑ 3 nouveaux clients'},
+  {name:'Yao Darwell',role:'Graphiste · Designer',project:'Portfolio',rating:5,text:"Mon portfolio m'a permis d'obtenir 3 nouveaux clients en un mois. Design superbe, animations fluides. AKATech comprend vraiment les créatifs.",img:'/images/clients/client-3.jpg',result:'↑ CA en 30 jours'},
+]
+
+// Stats globales des témoignages
+const TEMO_STATS = [
+  { val:'100%', label:'Clients satisfaits' },
+  { val:'5 ★',  label:'Note moyenne' },
+  { val:'< 1sem', label:'Délai moyen' },
 ]
 
 function AvatarFallback({name,size=52}){
   const initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
   return(
-    <div style={{width:size,height:size,borderRadius:'50%',background:'linear-gradient(135deg,rgba(34,200,100,.25),rgba(34,200,100,.08))',border:'2px solid rgba(34,200,100,.3)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-      <User size={Math.round(size*.42)} style={{color:'#22c864'}}/>
+    <div style={{width:size,height:size,borderRadius:'50%',background:'linear-gradient(135deg,rgba(34,200,100,.3),rgba(34,200,100,.08))',border:'2px solid rgba(34,200,100,.35)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:Math.round(size*.3),color:'#22c864'}}>
+      {initials}
     </div>
   )
 }
 
 function Testimonials() {
-  const ref=useRef(null); const inView=useInView(ref,{once:true,margin:'-60px'})
-  const [idx,setIdx]=useState(0)
-  const [imgErr,setImgErr]=useState({})
-  const [paused,setPaused]=useState(false)
-  const next=()=>setIdx(i=>(i+1)%TEMOS.length)
-  const prev=()=>setIdx(i=>(i-1+TEMOS.length)%TEMOS.length)
-  const t=TEMOS[idx]
+  const ref = useRef(null)
+  const inView = useInView(ref, { once:true, margin:'-60px' })
+  const [idx, setIdx] = useState(0)
+  const [imgErr, setImgErr] = useState({})
+  const [paused, setPaused] = useState(false)
+  const [dragStart, setDragStart] = useState(null)
 
-  useEffect(()=>{
-    if(paused) return
-    const iv=setInterval(next,4500)
-    return ()=>clearInterval(iv)
-  },[paused])
+  const next = () => setIdx(i => (i+1) % TEMOS.length)
+  const prev = () => setIdx(i => (i-1+TEMOS.length) % TEMOS.length)
+
+  useEffect(() => {
+    if (paused) return
+    const iv = setInterval(next, 5000)
+    return () => clearInterval(iv)
+  }, [paused])
+
+  const onDragStart = (x) => setDragStart(x)
+  const onDragEnd   = (x) => {
+    if (dragStart === null) return
+    const diff = dragStart - x
+    if (diff > 45) next()
+    else if (diff < -45) prev()
+    setDragStart(null)
+  }
+
+  const t = TEMOS[idx]
 
   return (
-    <section id="temoignages" ref={ref} style={{padding:'7rem 5%',background:'var(--dark3)',position:'relative',overflow:'hidden'}}>
-      <div style={{position:'absolute',left:'-5%',top:'30%',width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 60%)',pointerEvents:'none'}}/>
-      <div style={{maxWidth:900,margin:'0 auto',position:'relative',zIndex:1}}>
-        <motion.div initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} style={{textAlign:'center',marginBottom:'3.5rem'}}>
-          <div className="s-eye" style={{justifyContent:'center'}}>// Témoignages</div>
-          <h2 style={{fontSize:'clamp(1.9rem,3.5vw,2.8rem)',fontWeight:800,fontFamily:"'Syne',sans-serif",color:'#fff',letterSpacing:'-.03em'}}>
-            Ce que disent <span style={{color:'#22c864'}}>nos clients</span>
+    <section id="temoignages" ref={ref} style={{ padding:'7rem 5%', background:'var(--dark3)', position:'relative', overflow:'hidden' }}>
+      {/* Ambient orbs */}
+      <div style={{ position:'absolute', left:'-5%', top:'20%', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.05),transparent 60%)', pointerEvents:'none' }}/>
+      <div style={{ position:'absolute', right:'-8%', bottom:'10%', width:400, height:400, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.04),transparent 60%)', pointerEvents:'none' }}/>
+
+      <div style={{ maxWidth:1100, margin:'0 auto', position:'relative', zIndex:1 }}>
+
+        {/* ── Header ── */}
+        <motion.div initial={{ opacity:0, y:20 }} animate={inView?{opacity:1,y:0}:{}} style={{ textAlign:'center', marginBottom:'3.5rem' }}>
+          <div className="s-eye" style={{ justifyContent:'center' }}>// Témoignages</div>
+          <h2 style={{ fontSize:'clamp(1.9rem,3.5vw,2.8rem)', fontWeight:800, fontFamily:"'Syne',sans-serif", color:'#fff', letterSpacing:'-.03em' }}>
+            Ils ont fait confiance à <span style={{ color:'#22c864' }}>AKATech</span>
           </h2>
+          <p style={{ marginTop:'.8rem', fontSize:'.9rem', color:'rgba(255,255,255,.4)' }}>Des résultats concrets pour de vraies entreprises.</p>
+
+          {/* Stats rapides */}
+          <motion.div initial={{ opacity:0, y:12 }} animate={inView?{opacity:1,y:0}:{}} transition={{ delay:.2 }}
+            style={{ display:'inline-flex', gap:'2rem', marginTop:'1.8rem', padding:'.9rem 2rem', borderRadius:100, background:'rgba(34,200,100,.05)', border:'1px solid rgba(34,200,100,.15)', flexWrap:'wrap', justifyContent:'center' }}>
+            {TEMO_STATS.map(({ val, label }) => (
+              <div key={label} style={{ textAlign:'center' }}>
+                <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:'1rem', fontWeight:900, color:'#22c864', lineHeight:1 }}>{val}</div>
+                <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.52rem', color:'rgba(255,255,255,.35)', textTransform:'uppercase', letterSpacing:'.07em', marginTop:'.2rem' }}>{label}</div>
+              </div>
+            ))}
+          </motion.div>
         </motion.div>
 
-        <div style={{position:'relative'}}
-          onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)}>
+        {/* ── Carousel principal ── */}
+        <div
+          style={{ position:'relative', cursor:'grab', userSelect:'none' }}
+          onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+          onMouseDown={e => onDragStart(e.clientX)} onMouseUp={e => onDragEnd(e.clientX)}
+          onTouchStart={e => onDragStart(e.touches[0].clientX)} onTouchEnd={e => onDragEnd(e.changedTouches[0].clientX)}
+        >
           <AnimatePresence mode="wait">
-            <motion.div key={idx} initial={{opacity:0,x:40}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-40}} transition={{duration:.4,ease:[.22,1,.36,1]}}>
-              <div className="sku-card temo-card" style={{padding:'3rem',position:'relative',overflow:'hidden'}}>
-                <div style={{position:'absolute',top:-40,left:-40,width:200,height:200,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.08),transparent 60%)',pointerEvents:'none'}}/>
-                {/* Quote icon using Lucide */}
-                <div style={{position:'relative',zIndex:1}}>
-                  <div style={{marginBottom:'1.5rem',display:'flex',alignItems:'center',gap:'.5rem'}}>
-                    {[...Array(5)].map((_,j)=><span key={j} className="star-i"><Star size={14} fill="#f5b500" color="#f5b500"/></span>)}
-                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'.6rem',color:'rgba(255,255,255,.3)',marginLeft:'.3rem'}}>Avis vérifié</span>
-                    <BadgeCheck size={13} style={{color:'#22c864'}}/>
-                  </div>
-                  {/* Big decorative quote mark */}
-                  <div style={{position:'absolute',top:0,right:'1.5rem',fontSize:'6rem',lineHeight:.8,color:'rgba(34,200,100,.08)',fontFamily:'Georgia,serif',userSelect:'none',pointerEvents:'none'}}>"</div>
-                  <p style={{fontSize:'1.08rem',color:'rgba(255,255,255,.8)',lineHeight:1.85,fontStyle:'italic',marginBottom:'2rem',fontFamily:"'Syne',sans-serif",position:'relative',zIndex:1}}>
-                    {t.text}
-                  </p>
-                  <div style={{display:'flex',alignItems:'center',gap:'1rem',flexWrap:'wrap'}}>
-                    {imgErr[idx]
-                      ? <AvatarFallback name={t.name}/>
-                      : <img src={t.img} alt={t.name}
-                          onError={()=>setImgErr(e=>({...e,[idx]:true}))}
-                          style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:'2px solid rgba(34,200,100,.25)',flexShrink:0,background:'var(--dark4)'}}/>
-                    }
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:'.92rem',fontWeight:700,color:'#fff',fontFamily:"'Syne',sans-serif"}}>{t.name}</div>
-                      <div style={{fontSize:'.73rem',color:'rgba(255,255,255,.4)',marginTop:'.1rem'}}>{t.role}</div>
+            <motion.div key={idx}
+              initial={{ opacity:0, x:50, scale:.98 }}
+              animate={{ opacity:1, x:0, scale:1 }}
+              exit={{ opacity:0, x:-50, scale:.98 }}
+              transition={{ duration:.38, ease:[.22,1,.36,1] }}>
+
+              <div className="sku-card temo-card" style={{ padding:'2.5rem', position:'relative', overflow:'hidden' }}>
+                {/* Glow coin */}
+                <div style={{ position:'absolute', top:-50, left:-50, width:220, height:220, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.1),transparent 60%)', pointerEvents:'none' }}/>
+                <div style={{ position:'absolute', bottom:-30, right:-30, width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 65%)', pointerEvents:'none' }}/>
+
+                {/* Guillemet décoratif SVG */}
+                <svg width="48" height="36" viewBox="0 0 48 36" fill="none" style={{ position:'absolute', top:'1.5rem', right:'1.8rem', opacity:.1 }}>
+                  <path d="M0 36V22C0 9.85 7.16 3.07 21.47 0L24 5.6C17.07 7.27 13.6 10.93 13.6 16.6H21.6V36H0ZM26.4 36V22C26.4 9.85 33.56 3.07 47.87 0L50.4 5.6C43.47 7.27 40 10.93 40 16.6H48V36H26.4Z" fill="#22c864"/>
+                </svg>
+
+                <div style={{ position:'relative', zIndex:1 }}>
+                  {/* Étoiles + badge vérifié */}
+                  <div style={{ display:'flex', alignItems:'center', gap:'.5rem', marginBottom:'1.4rem' }}>
+                    <div style={{ display:'flex', gap:'.2rem' }}>
+                      {[...Array(t.rating)].map((_,j) => (
+                        <span key={j} className="star-i">
+                          <Star size={15} fill="#f5b500" color="#f5b500"/>
+                        </span>
+                      ))}
                     </div>
-                    <div style={{padding:'.3rem .9rem',background:'rgba(34,200,100,.08)',border:'1px solid rgba(34,200,100,.2)',borderRadius:100,fontFamily:"'JetBrains Mono',monospace",fontSize:'.6rem',color:'rgba(34,200,100,.75)',display:'flex',alignItems:'center',gap:'.3rem'}}>
-                      <Code size={10}/>{t.project}
+                    <div style={{ display:'flex', alignItems:'center', gap:'.3rem', padding:'.2rem .7rem', background:'rgba(34,200,100,.08)', border:'1px solid rgba(34,200,100,.2)', borderRadius:100 }}>
+                      <BadgeCheck size={11} style={{ color:'#22c864' }}/>
+                      <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'.55rem', color:'rgba(34,200,100,.8)', letterSpacing:'.06em' }}>Avis vérifié</span>
+                    </div>
+                    {/* Badge résultat concret */}
+                    <div style={{ marginLeft:'auto', padding:'.2rem .8rem', background:'rgba(34,200,100,.12)', border:'1px solid rgba(34,200,100,.25)', borderRadius:100, fontFamily:"'JetBrains Mono',monospace", fontSize:'.58rem', color:'#66ffaa', letterSpacing:'.05em', fontWeight:700, whiteSpace:'nowrap' }}>
+                      {t.result}
+                    </div>
+                  </div>
+
+                  {/* Texte témoignage */}
+                  <p style={{ fontSize:'clamp(.95rem,2.2vw,1.08rem)', color:'rgba(255,255,255,.82)', lineHeight:1.85, fontStyle:'italic', marginBottom:'2rem', fontFamily:"'Syne',sans-serif" }}>
+                    "{t.text}"
+                  </p>
+
+                  {/* Auteur + projet */}
+                  <div style={{ display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
+                    {/* Avatar */}
+                    <div style={{ position:'relative', flexShrink:0 }}>
+                      {imgErr[idx] ? (
+                        <AvatarFallback name={t.name} size={56}/>
+                      ) : (
+                        <LazyImg src={t.img} alt={t.name}
+                          style={{ width:56, height:56, borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(34,200,100,.3)', display:'block' }}
+                          placeholder={<AvatarFallback name={t.name} size={56}/>}
+                        />
+                      )}
+                      {/* Dot en ligne */}
+                      <div style={{ position:'absolute', bottom:1, right:1, width:12, height:12, borderRadius:'50%', background:'#22c864', border:'2px solid var(--dark3)' }}/>
+                    </div>
+
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:'.95rem', fontWeight:700, color:'#fff', fontFamily:"'Syne',sans-serif", lineHeight:1.2 }}>{t.name}</div>
+                      <div style={{ fontSize:'.72rem', color:'rgba(255,255,255,.4)', marginTop:'.2rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.role}</div>
+                    </div>
+
+                    {/* Badge projet */}
+                    <div style={{ padding:'.35rem 1rem', background:'linear-gradient(145deg,rgba(34,200,100,.1),rgba(34,200,100,.04))', border:'1px solid rgba(34,200,100,.2)', borderRadius:100, fontFamily:"'JetBrains Mono',monospace", fontSize:'.6rem', color:'rgba(34,200,100,.75)', display:'flex', alignItems:'center', gap:'.35rem', flexShrink:0 }}>
+                      <Code size={10}/>
+                      {t.project}
                     </div>
                   </div>
                 </div>
@@ -1584,17 +1737,66 @@ function Testimonials() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Nav */}
-          <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:'1rem',marginTop:'2rem'}}>
-            <button onClick={prev} style={{width:40,height:40,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(145deg,#0e2416,#081208)',border:'1px solid rgba(34,200,100,.2)',cursor:'pointer',boxShadow:'4px 4px 10px #010402'}}>
-              <ChevronLeft size={16} style={{color:'#66ffaa'}}/>
-            </button>
-            {TEMOS.map((_,i)=><button key={i} onClick={()=>setIdx(i)} style={{width:i===idx?24:8,height:8,borderRadius:4,background:i===idx?'#22c864':'rgba(34,200,100,.2)',border:'none',cursor:'pointer',transition:'all .25s',padding:0}}/>)}
-            <button onClick={next} style={{width:40,height:40,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(145deg,#27d570,#1aa355)',border:'none',cursor:'pointer',boxShadow:'4px 4px 10px rgba(0,0,0,.5)'}}>
-              <ChevronRight size={16} style={{color:'#fff'}}/>
-            </button>
+          {/* ── Navigation ── */}
+          <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'1rem', marginTop:'2rem' }}>
+            <motion.button onClick={prev} whileTap={{ scale:.92 }}
+              style={{ width:42, height:42, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(145deg,#0e2416,#081208)', border:'1px solid rgba(34,200,100,.2)', cursor:'pointer', boxShadow:'4px 4px 10px #010402' }}>
+              <ChevronLeft size={16} style={{ color:'#66ffaa' }}/>
+            </motion.button>
+
+            {/* Dots + progress bar */}
+            <div style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
+              {TEMOS.map((_,i) => (
+                <button key={i} onClick={() => setIdx(i)}
+                  style={{ width:i===idx?28:8, height:8, borderRadius:4, background:i===idx?'#22c864':'rgba(34,200,100,.2)', border:'none', cursor:'pointer', transition:'all .3s cubic-bezier(.22,1,.36,1)', padding:0, position:'relative', overflow:'hidden' }}>
+                  {i===idx && (
+                    <motion.div
+                      key={`prog-${idx}`}
+                      initial={{ scaleX:0 }} animate={{ scaleX:1 }}
+                      transition={{ duration: paused ? 0 : 5, ease:'linear' }}
+                      style={{ position:'absolute', inset:0, background:'rgba(255,255,255,.35)', transformOrigin:'left', borderRadius:4 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <motion.button onClick={next} whileTap={{ scale:.92 }}
+              style={{ width:42, height:42, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(145deg,#27d570,#1aa355)', border:'none', cursor:'pointer', boxShadow:'4px 4px 10px rgba(0,0,0,.5)' }}>
+              <ChevronRight size={16} style={{ color:'#fff' }}/>
+            </motion.button>
           </div>
+
+          {/* ── Mini cards des autres témoignages ── */}
+          <motion.div initial={{ opacity:0, y:16 }} animate={inView?{opacity:1,y:0}:{}} transition={{ delay:.4 }}
+            style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:'.8rem', marginTop:'2rem' }}>
+            {TEMOS.map((tm, i) => i !== idx && (
+              <motion.div key={i} onClick={() => setIdx(i)} whileHover={{ y:-3, borderColor:'rgba(34,200,100,.35)' }}
+                style={{ padding:'1rem 1.2rem', borderRadius:14, background:'rgba(34,200,100,.03)', border:`1px solid ${i===idx?'rgba(34,200,100,.3)':'rgba(34,200,100,.1)'}`, cursor:'pointer', transition:'border-color .2s', display:'flex', alignItems:'center', gap:'.8rem' }}>
+                {imgErr[i] ? <AvatarFallback name={tm.name} size={36}/> : (
+                  <LazyImg src={tm.img} alt={tm.name}
+                    style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'1.5px solid rgba(34,200,100,.2)', display:'block', flexShrink:0 }}
+                    placeholder={<AvatarFallback name={tm.name} size={36}/>}
+                  />
+                )}
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontSize:'.78rem', fontWeight:700, color:'rgba(255,255,255,.75)', fontFamily:"'Syne',sans-serif", overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{tm.name}</div>
+                  <div style={{ fontSize:'.6rem', color:'rgba(34,200,100,.5)', fontFamily:"'JetBrains Mono',monospace", marginTop:'.1rem' }}>{tm.project}</div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
+
+        {/* ── CTA bas ── */}
+        <motion.div initial={{ opacity:0, y:14 }} animate={inView?{opacity:1,y:0}:{}} transition={{ delay:.6 }}
+          style={{ textAlign:'center', marginTop:'3rem' }}>
+          <a href="https://wa.me/2250142507750?text=Bonjour+AKATech+!" target="_blank" rel="noreferrer"
+            className="btn-raised" style={{ display:'inline-flex', gap:'.5rem' }}>
+            <MessageCircle size={16}/>Rejoindre nos clients satisfaits
+          </a>
+        </motion.div>
+
       </div>
     </section>
   )
@@ -1690,7 +1892,7 @@ function Contact() {
           <p style={{marginTop:'.8rem',fontSize:'.92rem',color:'rgba(255,255,255,.4)'}}>Décrivez votre projet — je vous réponds sous 24h.</p>
         </motion.div>
 
-        <div className="contact-grid" style={{display:'grid',gridTemplateColumns:'1fr 1.55fr',gap:'2.5rem',alignItems:'start'}}>
+        <div className="contact-grid" style={{display:'grid',gap:'2.5rem',alignItems:'start'}}>
           {/* ── LEFT COLUMN ── */}
           <motion.div initial={{opacity:0,x:-24}} animate={inView?{opacity:1,x:0}:{}} transition={{duration:.6}}
             className="contact-left-mobile"
