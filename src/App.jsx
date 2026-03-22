@@ -283,53 +283,97 @@ const GLOBAL_CSS = `
 
   /* TABLET */
   @media(max-width:1024px){
-    .footer-grid    { grid-template-columns:1fr 1fr; }
-    .trust-grid     { grid-template-columns:repeat(2,1fr); }
-    .about-grid     { grid-template-columns:1fr; gap:2.5rem; }
-    .about-photos   { grid-template-rows:180px 150px; }
+    .footer-grid  { grid-template-columns:1fr 1fr; }
+    .trust-grid   { grid-template-columns:repeat(2,1fr); }
+    .about-grid   { grid-template-columns:1fr; gap:2.5rem; }
+    .about-photos { grid-template-rows:180px 150px; }
   }
 
-  /* MOBILE */
+  /* ── MOBILE 768px ── */
   @media(max-width:768px){
     .contact-grid   { grid-template-columns:1fr; }
-    .form-row       { grid-template-columns:1fr; }
+    .form-row       { grid-template-columns:1fr 1fr; gap:.7rem; }
     .trust-grid     { grid-template-columns:repeat(2,1fr); }
     .footer-grid    { grid-template-columns:1fr 1fr; }
     .contact-socials{ grid-template-columns:repeat(2,1fr); }
     .contact-stat   { grid-template-columns:repeat(3,1fr); }
-    .hero-section   { padding:5rem 5% 4rem !important; }
+    .hero-section   { padding:5rem 4% 4rem !important; }
     .section-pad    { padding:4rem 4% !important; }
-    .temo-card      { padding:2rem 1.4rem !important; }
-    .contact-card   { padding:1.8rem 1.4rem !important; }
+    .temo-card      { padding:1.6rem 1.2rem !important; }
+    .contact-card   { padding:1.6rem 1.2rem !important; }
     .about-grid     { grid-template-columns:1fr; gap:2rem; }
     .about-photos   { grid-template-columns:1fr 1fr; grid-template-rows:160px 130px; gap:.6rem; }
     .about-stats    { grid-template-columns:repeat(3,1fr); }
-    /* Hide nav label text on very small screens */
-    .nav-cta-text   { display:none; }
-    /* Larger touch targets */
-    .btn-raised, .btn-ghost { padding:.9rem 1.4rem; min-height:48px; }
-    /* Projects carousel: 1 per view on mobile */
-    .proj-grid-mobile { grid-template-columns:100% !important; }
-    /* Section headings */
-    h2 { font-size:clamp(1.6rem,5vw,2.4rem) !important; }
-    /* Pricing tabs wrap nicely */
-    .pricing-tabs   { gap:.3rem !important; }
-    .pricing-tabs button { font-size:.75rem !important; padding:.45rem 1rem !important; }
+    .btn-raised, .btn-ghost { min-height:48px; }
+    h2 { font-size:clamp(1.5rem,5vw,2.2rem) !important; }
+    /* Hero trust bar: 4 colonnes compactes */
+    .hero-trust-bar {
+      display:grid !important;
+      grid-template-columns:repeat(4,1fr) !important;
+      gap:.4rem !important;
+      padding:.75rem !important;
+      width:calc(100vw - 3rem) !important;
+      max-width:500px !important;
+    }
+    /* Services scroll horizontal */
+    .svc-scroll { overflow-x:auto !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch; scrollbar-width:none; display:flex !important; gap:.8rem; padding-bottom:.4rem; }
+    .svc-scroll::-webkit-scrollbar { display:none; }
+    .svc-scroll > * { scroll-snap-align:start; min-width:82vw !important; flex-shrink:0 !important; }
+    /* Trust 2×2 */
+    .trust-grid { grid-template-columns:repeat(2,1fr) !important; gap:.7rem !important; }
+    /* Process scroll horizontal */
+    .proc-scroll { overflow-x:auto !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch; scrollbar-width:none; display:flex !important; gap:1rem; padding-bottom:.5rem; }
+    .proc-scroll::-webkit-scrollbar { display:none; }
+    .proc-scroll > * { scroll-snap-align:center; min-width:68vw !important; flex-shrink:0 !important; }
+    /* Projects 1 par 1 sur mobile */
+    .proj-mobile-1 { grid-template-columns:100% !important; }
+    /* Pricing carousel */
+    .pricing-mobile-scroll { display:flex !important; overflow-x:auto !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch; scrollbar-width:none; gap:1rem; }
+    .pricing-mobile-scroll::-webkit-scrollbar { display:none; }
+    .pricing-mobile-scroll > * { scroll-snap-align:start; min-width:80vw !important; flex-shrink:0 !important; }
+    /* Pricing tabs scroll horiz */
+    .pricing-tabs { flex-wrap:nowrap !important; overflow-x:auto !important; justify-content:flex-start !important; padding-bottom:.3rem; scrollbar-width:none; }
+    .pricing-tabs::-webkit-scrollbar { display:none; }
+    /* Contact: form first on mobile */
+    .contact-left-mobile  { order:2 !important; }
+    .contact-right-mobile { order:1 !important; }
   }
+
+  /* ── MOBILE 480px ── */
   @media(max-width:480px){
     .footer-grid    { grid-template-columns:1fr; }
     .contact-socials{ grid-template-columns:1fr 1fr; }
-    .contact-stat   { grid-template-columns:repeat(3,1fr); gap:.4rem; }
+    .contact-stat   { grid-template-columns:repeat(3,1fr); gap:.35rem; }
     .form-row       { grid-template-columns:1fr; }
-    .pricing-grid   { grid-template-columns:1fr; }
-    .about-photos   { grid-template-columns:1fr 1fr; grid-template-rows:130px 110px; gap:.5rem; }
-    .about-stats    { grid-template-columns:1fr 1fr 1fr; gap:.5rem; }
-    .trust-grid     { grid-template-columns:1fr 1fr; }
-    /* Hero trust bar stacks */
-    .hero-trust-bar { flex-direction:column !important; gap:1rem !important; padding:1.2rem !important; }
-    /* Full-width CTAs */
+    .about-photos   { grid-template-columns:1fr 1fr; grid-template-rows:120px 100px; gap:.4rem; }
+    .about-stats    { grid-template-columns:repeat(3,1fr); gap:.4rem; }
+    .hero-trust-bar { gap:.25rem !important; padding:.6rem !important; }
     .hero-cta-row   { flex-direction:column !important; align-items:stretch !important; }
     .hero-cta-row a { justify-content:center !important; }
+    .svc-scroll > * { min-width:88vw !important; }
+    .proc-scroll > * { min-width:78vw !important; }
+    .pricing-mobile-scroll > * { min-width:88vw !important; }
+  }
+
+  /* ── HAMBURGER BOTTOM SHEET ── */
+  .mobile-menu-overlay {
+    position:fixed; inset:0; z-index:898;
+    background:rgba(0,0,0,.6);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  .mobile-menu-sheet {
+    position:fixed; bottom:0; left:0; right:0; z-index:899;
+    background:linear-gradient(180deg,#0d2216 0%,#030806 100%);
+    border-top:1px solid rgba(34,200,100,.25);
+    border-radius:24px 24px 0 0;
+    padding:0 1.4rem calc(env(safe-area-inset-bottom,0px) + 1.5rem);
+    box-shadow:0 -12px 48px rgba(0,0,0,.8), 0 -1px 0 rgba(34,200,100,.2);
+  }
+  .mobile-menu-handle {
+    width:44px; height:4px; border-radius:2px;
+    background:rgba(34,200,100,.35);
+    margin:14px auto 18px;
   }
 `
 
@@ -507,20 +551,63 @@ function Navbar() {
           ))}
         </ul>
 
-        <button className="md:hidden" onClick={()=>setOpen(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',color:'#66ffaa'}}>
+        <button className="md:hidden" onClick={()=>setOpen(v=>!v)} style={{background:'none',border:'none',cursor:'pointer',color:'#66ffaa',padding:'.4rem',borderRadius:8,transition:'background .2s'}}
+          onMouseEnter={e=>e.currentTarget.style.background='rgba(34,200,100,.08)'}
+          onMouseLeave={e=>e.currentTarget.style.background='none'}>
           {open?<X size={22}/>:<Menu size={22}/>}
         </button>
       </motion.nav>
+
+      {/* Bottom-sheet mobile menu */}
       <AnimatePresence>
         {open&&(
-          <motion.div initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}
-            style={{position:'fixed',top:64,left:0,right:0,zIndex:899,background:'rgba(3,8,6,.97)',backdropFilter:'blur(20px)',borderBottom:'1px solid rgba(34,200,100,.15)',padding:'1rem 1.5rem',display:'flex',flexDirection:'column',gap:'.2rem'}}
-          >
-            {NAV.map(({href,label})=>(
-              <a key={href} href={href} onClick={()=>setOpen(false)} style={{padding:'.75rem',fontSize:'.95rem',fontWeight:600,color:'rgba(255,255,255,.7)',borderBottom:'1px solid rgba(34,200,100,.07)',fontFamily:"'Syne',sans-serif"}}>{label}</a>
-            ))}
-            <a href="https://wa.me/2250142507750" target="_blank" rel="noreferrer" className="btn-raised" style={{marginTop:'.7rem',justifyContent:'center'}}>WhatsApp</a>
-          </motion.div>
+          <>
+            {/* Overlay flouté */}
+            <motion.div
+              className="mobile-menu-overlay"
+              initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+              transition={{duration:.25}}
+              onClick={()=>setOpen(false)}
+            />
+            {/* Sheet qui monte du bas */}
+            <motion.div
+              className="mobile-menu-sheet"
+              initial={{y:'100%'}} animate={{y:0}} exit={{y:'100%'}}
+              transition={{type:'spring',stiffness:320,damping:32}}
+            >
+              {/* Handle bar */}
+              <div className="mobile-menu-handle" onClick={()=>setOpen(false)}/>
+
+              {/* Links */}
+              <div style={{display:'flex',flexDirection:'column',gap:'.15rem',marginBottom:'1.2rem'}}>
+                {NAV.map(({href,label},i)=>(
+                  <motion.a key={href} href={href} onClick={()=>setOpen(false)}
+                    initial={{opacity:0,x:-16}} animate={{opacity:1,x:0}} transition={{delay:i*.05}}
+                    style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.9rem 1rem',fontSize:'1rem',fontWeight:600,color:active===href.slice(1)?'#22c864':'rgba(255,255,255,.75)',borderBottom:'1px solid rgba(34,200,100,.07)',fontFamily:"'Syne',sans-serif",borderRadius:10,transition:'background .2s'}}
+                    onMouseEnter={e=>{e.currentTarget.style.background='rgba(34,200,100,.06)';e.currentTarget.style.color='#66ffaa'}}
+                    onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.color=active===href.slice(1)?'#22c864':'rgba(255,255,255,.75)'}}
+                  >
+                    <span>{label}</span>
+                    <ChevronRight size={14} style={{color:'rgba(34,200,100,.35)',flexShrink:0}}/>
+                  </motion.a>
+                ))}
+              </div>
+
+              {/* WhatsApp CTA */}
+              <motion.a href="https://wa.me/2250142507750" target="_blank" rel="noreferrer"
+                initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:.35}}
+                className="btn-raised" style={{width:'100%',justifyContent:'center',borderRadius:14,padding:'1rem',fontSize:'.92rem'}}>
+                <MessageCircle size={16}/>Démarrer sur WhatsApp
+              </motion.a>
+
+              {/* Localisation */}
+              <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:.4}}
+                style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'.5rem',marginTop:'1rem',fontSize:'.7rem',color:'rgba(255,255,255,.2)',fontFamily:"'JetBrains Mono',monospace"}}>
+                <MapPin size={11} style={{color:'rgba(34,200,100,.3)'}}/>
+                Abidjan, Côte d'Ivoire
+              </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
@@ -639,9 +726,9 @@ function Hero() {
           style={{display:'inline-flex',gap:'2.5rem',padding:'1.2rem 2.5rem',flexWrap:'wrap',justifyContent:'center',alignItems:'center'}}
         >
           {[{val:'10+',label:'Projets livrés'},{val:'24h',label:'Réponse rapide'},{val:'100%',label:'Sur mesure'},{val:'5★',label:'Satisfaction'}].map(({val,label},i)=>(
-            <div key={i} style={{textAlign:'center'}}>
-              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:'1.5rem',fontWeight:900,color:'#22c864',lineHeight:1}}>{val}</div>
-              <div style={{fontSize:'.65rem',color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',fontFamily:"'JetBrains Mono',monospace"}}>{label}</div>
+            <div key={i} style={{textAlign:'center',minWidth:0}}>
+              <div className="trust-val" style={{fontFamily:"'Orbitron',sans-serif",fontSize:'1.5rem',fontWeight:900,color:'#22c864',lineHeight:1}}>{val}</div>
+              <div className="trust-lbl" style={{fontSize:'.65rem',color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.06em',marginTop:'.2rem',fontFamily:"'JetBrains Mono',monospace",whiteSpace:'nowrap'}}>{label}</div>
             </div>
           ))}
         </motion.div>
@@ -962,7 +1049,7 @@ function Services() {
           </h2>
         </motion.div>
         <ServicesBanner/>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(320px,1fr))',gap:'1.2rem'}}>
+        <div className="svc-scroll" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(320px,1fr))',gap:'1.2rem'}}>
           {SVCS.map(({icon:Icon,n,title,desc,price,del},i)=>(
             <motion.div key={title} className="sku-card" initial={{opacity:0,y:32,scale:.97}} animate={inView?{opacity:1,y:0,scale:1}:{}} transition={{duration:.55,delay:(i%3)*.12,ease:[.22,1,.36,1]}}
               whileHover={{ y:-6, boxShadow:'10px 10px 32px #010402,-4px -4px 20px rgba(34,200,100,.12),0 0 40px rgba(34,200,100,.2)', borderColor:'rgba(34,200,100,.35)', transition:{duration:.25} }}
@@ -1015,7 +1102,7 @@ function TrustBar() {
             Construit sur la confiance.{' '}<span style={{color:'#22c864'}}>Porté par les résultats.</span>
           </h2>
         </motion.div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'1rem'}}>
+        <div className="trust-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'1rem'}}>
           {TRUST.map(({n,title,desc},i)=>(
             <motion.div key={n} className="sku-card" initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{delay:i*.08}} style={{padding:'1.8rem',position:'relative'}}>
               <div style={{position:'absolute',top:'.9rem',right:'.9rem',width:28,height:28,borderRadius:'50%',border:'1px solid rgba(34,200,100,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -1159,7 +1246,7 @@ function Process() {
           </h2>
         </motion.div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))', gap:'1.2rem', position:'relative' }}>
+        <div className="proc-scroll" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))', gap:'1.2rem', position:'relative' }}>
           {/* Connecteur animé */}
           <div className="hidden lg:block proc-connector" style={{ position:'absolute', top:44, left:'12.5%', right:'12.5%', height:1, background:'linear-gradient(90deg,transparent,rgba(34,200,100,.25) 20%,rgba(34,200,100,.25) 80%,transparent)', zIndex:0, pointerEvents:'none' }}/>
 
@@ -1234,7 +1321,14 @@ function ProjectsCarousel() {
   const [idx,setIdx]=useState(0)
   const [paused,setPaused]=useState(false)
   const [dragStart,setDragStart]=useState(null)
-  const perView=3; const max=Math.max(0,PROJS.length-perView)
+  const [isMobile,setIsMobile]=useState(false)
+  useEffect(()=>{
+    const check=()=>setIsMobile(window.innerWidth<768)
+    check(); window.addEventListener('resize',check,{passive:true})
+    return()=>window.removeEventListener('resize',check)
+  },[])
+  const perView=isMobile?1:3
+  const max=Math.max(0,PROJS.length-perView)
   const prev=()=>setIdx(i=>Math.max(0,i-1))
   const next=()=>setIdx(i=>Math.min(max,i+1))
   const BADGE={live:{label:'EN LIGNE',color:'#22c864',bg:'rgba(34,200,100,.12)'},demo:{label:'DÉMO',color:'#f59e0b',bg:'rgba(245,158,11,.1)'},wip:{label:'EN COURS',color:'#f97316',bg:'rgba(249,115,22,.1)'}}
@@ -1366,9 +1460,9 @@ function Pricing() {
         </motion.div>
 
         {/* Tabs */}
-        <div style={{display:'flex',justifyContent:'center',gap:'.4rem',flexWrap:'wrap',marginBottom:'3rem'}}>
+        <div className="pricing-tabs" style={{display:'flex',justifyContent:'center',gap:'.4rem',marginBottom:'3rem'}}>
           {Object.entries(PRICING).map(([k,v])=>(
-            <button key={k} onClick={()=>setTab(k)} style={{padding:'.5rem 1.4rem',borderRadius:100,border:'1px solid',borderColor:tab===k?'#22c864':'rgba(34,200,100,.15)',background:tab===k?'linear-gradient(145deg,#27d570,#1aa355)':'linear-gradient(145deg,rgba(34,200,100,.04),rgba(34,200,100,.01))',color:tab===k?'#fff':'rgba(255,255,255,.5)',fontFamily:"'Syne',sans-serif",fontSize:'.82rem',fontWeight:700,cursor:'pointer',transition:'all .22s',boxShadow:tab===k?'4px 4px 12px rgba(0,0,0,.5),var(--glow)':'2px 2px 8px rgba(0,0,0,.3)'}}>
+            <button key={k} onClick={()=>setTab(k)} style={{padding:'.5rem 1.4rem',borderRadius:100,border:'1px solid',flexShrink:0,borderColor:tab===k?'#22c864':'rgba(34,200,100,.15)',background:tab===k?'linear-gradient(145deg,#27d570,#1aa355)':'linear-gradient(145deg,rgba(34,200,100,.04),rgba(34,200,100,.01))',color:tab===k?'#fff':'rgba(255,255,255,.5)',fontFamily:"'Syne',sans-serif",fontSize:'.82rem',fontWeight:700,cursor:'pointer',transition:'all .22s',boxShadow:tab===k?'4px 4px 12px rgba(0,0,0,.5),var(--glow)':'2px 2px 8px rgba(0,0,0,.3)'}}>
               {v.label}
             </button>
           ))}
@@ -1376,6 +1470,7 @@ function Pricing() {
 
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.3}}
+            className="pricing-mobile-scroll"
             style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:'1.2rem'}}
           >
             {d.plans.map((p,i)=>{
@@ -1595,9 +1690,10 @@ function Contact() {
           <p style={{marginTop:'.8rem',fontSize:'.92rem',color:'rgba(255,255,255,.4)'}}>Décrivez votre projet — je vous réponds sous 24h.</p>
         </motion.div>
 
-        <div className="contact-grid">
+        <div className="contact-grid" style={{display:'grid',gridTemplateColumns:'1fr 1.55fr',gap:'2.5rem',alignItems:'start'}}>
           {/* ── LEFT COLUMN ── */}
           <motion.div initial={{opacity:0,x:-24}} animate={inView?{opacity:1,x:0}:{}} transition={{duration:.6}}
+            className="contact-left-mobile"
             style={{display:'flex',flexDirection:'column',gap:'1.1rem'}}>
 
             {/* Disponible badge */}
@@ -1657,8 +1753,9 @@ function Contact() {
           </motion.div>
 
           {/* ── RIGHT: FORM ── */}
-          <motion.div initial={{opacity:0,x:24}} animate={inView?{opacity:1,x:0}:{}} transition={{duration:.6,delay:.1}}>
-            <div className="sku-card contact-card" style={{padding:'2.5rem',position:'relative',overflow:'hidden'}}>
+          <motion.div initial={{opacity:0,x:24}} animate={inView?{opacity:1,x:0}:{}} transition={{duration:.6,delay:.1}}
+            className="contact-right-mobile">
+            <div className="sku-card contact-card" style={{padding:'2rem',position:'relative',overflow:'hidden'}}>
               {/* Inner glow */}
               <div style={{position:'absolute',top:-60,right:-60,width:200,height:200,borderRadius:'50%',background:'radial-gradient(circle,rgba(34,200,100,.06),transparent 65%)',pointerEvents:'none'}}/>
               <div style={{position:'relative',zIndex:1}}>
