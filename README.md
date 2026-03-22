@@ -18,12 +18,14 @@
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Framer Motion](https://img.shields.io/badge/Framer_Motion-11-0055FF?style=flat-square&logo=framer&logoColor=white)](https://www.framer.com/motion)
-[![License](https://img.shields.io/badge/License-MIT-22c864?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Production-22c864?style=flat-square)]()
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=flat-square&logo=vercel&logoColor=white)](https://akatech.vercel.app)
+[![Status](https://img.shields.io/badge/Status-Live_🟢-22c864?style=flat-square)]()
 
 ---
 
-🌐 **[akafolio160502.vercel.app](https://akafolio160502.vercel.app/)** · 💬 **[WhatsApp](https://wa.me/2250142507750)** · 📧 **[wthomasss06@gmail.com](mailto:wthomasss06@gmail.com)**
+### 🚀 [akatech.vercel.app](https://akatech.vercel.app/) — Site en production
+
+🌐 **[Portfolio](https://akafolio160502.vercel.app/)** · 💬 **[WhatsApp](https://wa.me/2250142507750)** · 📧 **[wthomasss06@gmail.com](mailto:wthomasss06@gmail.com)**
 
 </div>
 
@@ -45,6 +47,8 @@
 ## 🖥️ Aperçu
 
 Site vitrine de l'agence **AKATech**, développé de A à Z en React + Vite. Design skeuomorphisme vert/noir, entièrement animé avec Framer Motion, 100% responsive mobile.
+
+🔗 **Site en ligne : [https://akatech.vercel.app](https://akatech.vercel.app/)**
 
 > AKATech accompagne les entrepreneurs, PME et créateurs en Afrique dans la création de solutions web modernes — des solutions conçues pour **attirer des clients**, **automatiser votre activité** et **générer des revenus**.
 
@@ -180,17 +184,21 @@ npm run preview  # Prévisualiser le build
 
 ## 🌍 Déploiement
 
-Le projet est prêt pour un déploiement **Vercel** (recommandé) :
+Le site est déployé sur **Vercel** et accessible à l'adresse :
+
+> **[https://akatech.vercel.app](https://akatech.vercel.app/)**
+
+Pour redéployer après modifications :
 
 ```bash
 # Installer Vercel CLI
 npm i -g vercel
 
-# Déployer
+# Déployer en production
 vercel --prod
 ```
 
-Ou via **GitHub** → connecter le repo sur [vercel.com](https://vercel.com), build command `npm run build`, output dir `dist`.
+Ou via **GitHub** → chaque push sur `main` déclenche un déploiement automatique sur Vercel.
 
 ---
 
